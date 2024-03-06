@@ -476,6 +476,17 @@ module std::features {
         is_enabled(MODULE_EVENT_MIGRATION)
     }
 
+    /// Whether migration from coin to fungible asset feature is enabled.
+    ///
+    /// Lifetime: transient
+    const COIN_TO_FUNGIBLE_ASSET_MIGRATION: u64 = 59;
+
+    public fun get_coin_to_fungible_asset_migration_feature(): u64 { COIN_TO_FUNGIBLE_ASSET_MIGRATION }
+
+    public fun coin_to_fungible_asset_migration_feature_enabled(): bool acquires Features {
+        is_enabled(COIN_TO_FUNGIBLE_ASSET_MIGRATION)
+    }
+
     // ============================================================================================
     // Feature Flag Implementation
 

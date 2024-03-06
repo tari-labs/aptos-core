@@ -70,6 +70,7 @@ pub enum FeatureFlag {
     DELEGATION_POOL_ALLOWLISTING = 56,
     MODULE_EVENT_MIGRATION = 57,
     REJECT_UNSTABLE_BYTECODE = 58,
+    COIN_TO_FUNGIBLE_ASSET_MIGRATION = 59,
 }
 
 impl FeatureFlag {
@@ -126,6 +127,7 @@ impl FeatureFlag {
             FeatureFlag::DELEGATION_POOL_ALLOWLISTING,
             FeatureFlag::MODULE_EVENT_MIGRATION,
             FeatureFlag::REJECT_UNSTABLE_BYTECODE,
+            FeatureFlag::COIN_TO_FUNGIBLE_ASSET_MIGRATION,
         ]
     }
 }

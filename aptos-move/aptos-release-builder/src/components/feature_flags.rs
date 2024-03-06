@@ -109,6 +109,7 @@ pub enum FeatureFlag {
     DelegationPoolAllowlisting,
     ModuleEventMigration,
     RejectUnstableBytecode,
+    CoinToFungibleAssetMigration,
 }
 
 fn generate_features_blob(writer: &CodeWriter, data: &[u64]) {
@@ -274,6 +275,9 @@ impl From<FeatureFlag> for AptosFeatureFlag {
             },
             FeatureFlag::ModuleEventMigration => AptosFeatureFlag::MODULE_EVENT_MIGRATION,
             FeatureFlag::RejectUnstableBytecode => AptosFeatureFlag::REJECT_UNSTABLE_BYTECODE,
+            FeatureFlag::CoinToFungibleAssetMigration => {
+                AptosFeatureFlag::COIN_TO_FUNGIBLE_ASSET_MIGRATION
+            },
         }
     }
 }
@@ -368,6 +372,9 @@ impl From<AptosFeatureFlag> for FeatureFlag {
             },
             AptosFeatureFlag::MODULE_EVENT_MIGRATION => FeatureFlag::ModuleEventMigration,
             AptosFeatureFlag::REJECT_UNSTABLE_BYTECODE => FeatureFlag::RejectUnstableBytecode,
+            AptosFeatureFlag::COIN_TO_FUNGIBLE_ASSET_MIGRATION => {
+                FeatureFlag::CoinToFungibleAssetMigration
+            },
         }
     }
 }
