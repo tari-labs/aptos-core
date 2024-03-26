@@ -1,4 +1,4 @@
-// Copyright © Aptos Foundation
+// Copyright (c) Aptos Foundation
 // SPDX-License-Identifier: Apache-2.0
 
 //! Implements the Poseidon hash function for BN-254, which hashes $\le$ 16 field elements and
