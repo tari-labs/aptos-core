@@ -4,6 +4,7 @@ module aptos_framework::function_info {
     use std::features;
     use std::string::{Self, String};
 
+    friend aptos_framework::fungible_asset;
     friend aptos_framework::dispatchable_fungible_asset;
     #[test_only]
     friend aptos_framework::function_info_tests;

@@ -17,11 +17,12 @@ to customize the logic for withdraw and deposit operations. For example:
 See AIP-73 for further discussion
 
 
--  [Resource `DispatchFunctionStore`](#0x1_dispatchable_fungible_asset_DispatchFunctionStore)
+-  [Resource `TransferRefStore`](#0x1_dispatchable_fungible_asset_TransferRefStore)
 -  [Constants](#@Constants_0)
 -  [Function `register_dispatch_functions`](#0x1_dispatchable_fungible_asset_register_dispatch_functions)
 -  [Function `withdraw`](#0x1_dispatchable_fungible_asset_withdraw)
 -  [Function `deposit`](#0x1_dispatchable_fungible_asset_deposit)
+-  [Function `borrow_transfer_ref`](#0x1_dispatchable_fungible_asset_borrow_transfer_ref)
 -  [Function `transfer_fixed_send`](#0x1_dispatchable_fungible_asset_transfer_fixed_send)
 -  [Function `transfer_fixed_receive`](#0x1_dispatchable_fungible_asset_transfer_fixed_receive)
 -  [Function `dispatchable_withdraw`](#0x1_dispatchable_fungible_asset_dispatchable_withdraw)
@@ -30,23 +31,22 @@ See AIP-73 for further discussion
 
 
 <pre><code><b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error">0x1::error</a>;
+<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features">0x1::features</a>;
 <b>use</b> <a href="function_info.md#0x1_function_info">0x1::function_info</a>;
 <b>use</b> <a href="fungible_asset.md#0x1_fungible_asset">0x1::fungible_asset</a>;
 <b>use</b> <a href="object.md#0x1_object">0x1::object</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
 </code></pre>
 
 
 
-<a id="0x1_dispatchable_fungible_asset_DispatchFunctionStore"></a>
+<a id="0x1_dispatchable_fungible_asset_TransferRefStore"></a>
 
-## Resource `DispatchFunctionStore`
+## Resource `TransferRefStore`
 
 
 
-<pre><code>#[resource_group_member(#[group = <a href="object.md#0x1_object_ObjectGroup">0x1::object::ObjectGroup</a>])]
-<b>struct</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> <b>has</b> key
+<pre><code><b>struct</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a> <b>has</b> key
 </code></pre>
 
 
@@ -56,18 +56,6 @@ See AIP-73 for further discussion
 
 
 <dl>
-<dt>
-<code>withdraw_function: <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a></code>
-</dt>
-<dd>
-
-</dd>
-<dt>
-<code>deposit_function: <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a></code>
-</dt>
-<dd>
-
-</dd>
 <dt>
 <code>transfer_ref: <a href="fungible_asset.md#0x1_fungible_asset_TransferRef">fungible_asset::TransferRef</a></code>
 </dt>
@@ -84,22 +72,12 @@ See AIP-73 for further discussion
 ## Constants
 
 
-<a id="0x1_dispatchable_fungible_asset_EALREADY_REGISTERED"></a>
+<a id="0x1_dispatchable_fungible_asset_ENOT_ACTIVATED"></a>
 
-Trying to register overload functions to fungible asset that has already been initialized with custom transfer function.
-
-
-<pre><code><b>const</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EALREADY_REGISTERED">EALREADY_REGISTERED</a>: u64 = 5;
-</code></pre>
+Feature is not activated yet on the network.
 
 
-
-<a id="0x1_dispatchable_fungible_asset_EOBJECT_IS_DELETABLE"></a>
-
-Fungibility is only available for non-deletable objects.
-
-
-<pre><code><b>const</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EOBJECT_IS_DELETABLE">EOBJECT_IS_DELETABLE</a>: u64 = 18;
+<pre><code><b>const</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_ENOT_ACTIVATED">ENOT_ACTIVATED</a>: u64 = 3;
 </code></pre>
 
 
@@ -109,37 +87,17 @@ Fungibility is only available for non-deletable objects.
 Recipient is not getting the guaranteed value;
 
 
-<pre><code><b>const</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EAMOUNT_MISMATCH">EAMOUNT_MISMATCH</a>: u64 = 4;
+<pre><code><b>const</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EAMOUNT_MISMATCH">EAMOUNT_MISMATCH</a>: u64 = 2;
 </code></pre>
 
 
 
-<a id="0x1_dispatchable_fungible_asset_EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH"></a>
+<a id="0x1_dispatchable_fungible_asset_ESTORE_NOT_FOUND"></a>
 
-Provided deposit function type doesn't meet the signature requirement.
-
-
-<pre><code><b>const</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH">EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH</a>: u64 = 2;
-</code></pre>
+TransferRefStore doesn't exist on the fungible asset type.
 
 
-
-<a id="0x1_dispatchable_fungible_asset_EFUNCTION_STORE_NOT_FOUND"></a>
-
-Calling overloadable api on non-overloadable fungible asset store.
-
-
-<pre><code><b>const</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EFUNCTION_STORE_NOT_FOUND">EFUNCTION_STORE_NOT_FOUND</a>: u64 = 3;
-</code></pre>
-
-
-
-<a id="0x1_dispatchable_fungible_asset_EWITHDRAW_FUNCTION_SIGNATURE_MISMATCH"></a>
-
-Provided withdraw function type doesn't meet the signature requirement.
-
-
-<pre><code><b>const</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EWITHDRAW_FUNCTION_SIGNATURE_MISMATCH">EWITHDRAW_FUNCTION_SIGNATURE_MISMATCH</a>: u64 = 1;
+<pre><code><b>const</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_ESTORE_NOT_FOUND">ESTORE_NOT_FOUND</a>: u64 = 1;
 </code></pre>
 
 
@@ -148,7 +106,6 @@ Provided withdraw function type doesn't meet the signature requirement.
 
 ## Function `register_dispatch_functions`
 
-Create a fungible asset store whose transfer rule would be overloaded by the provided function.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_register_dispatch_functions">register_dispatch_functions</a>(constructor_ref: &<a href="object.md#0x1_object_ConstructorRef">object::ConstructorRef</a>, withdraw_function: <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>, deposit_function: <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>)
@@ -165,41 +122,9 @@ Create a fungible asset store whose transfer rule would be overloaded by the pro
     withdraw_function: FunctionInfo,
 		deposit_function: FunctionInfo,
 ) {
-    <b>let</b> dispatcher_withdraw_function_info = <a href="function_info.md#0x1_function_info_new_function_info">function_info::new_function_info</a>(
-	        @aptos_framework,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset">dispatchable_fungible_asset</a>"),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"dispatchable_withdraw"),
-    );
-    // Verify that caller type matches callee type so wrongly typed function cannot be registered.
-    <b>assert</b>!(<a href="function_info.md#0x1_function_info_check_dispatch_type_compatibility">function_info::check_dispatch_type_compatibility</a>(
-        &dispatcher_withdraw_function_info,
-        &withdraw_function
-    ), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EWITHDRAW_FUNCTION_SIGNATURE_MISMATCH">EWITHDRAW_FUNCTION_SIGNATURE_MISMATCH</a>));
-
-    <b>let</b> dispatcher_deposit_function_info = <a href="function_info.md#0x1_function_info_new_function_info">function_info::new_function_info</a>(
-	        @aptos_framework,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset">dispatchable_fungible_asset</a>"),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"dispatchable_deposit"),
-    );
-    // Verify that caller type matches callee type so wrongly typed function cannot be registered.
-    <b>assert</b>!(<a href="function_info.md#0x1_function_info_check_dispatch_type_compatibility">function_info::check_dispatch_type_compatibility</a>(
-        &dispatcher_deposit_function_info,
-        &deposit_function
-    ), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH">EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH</a>));
-
-    <b>assert</b>!(!<a href="object.md#0x1_object_can_generate_delete_ref">object::can_generate_delete_ref</a>(constructor_ref), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EOBJECT_IS_DELETABLE">EOBJECT_IS_DELETABLE</a>));
-    <b>assert</b>!(!<b>exists</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(<a href="object.md#0x1_object_address_from_constructor_ref">object::address_from_constructor_ref</a>(constructor_ref)), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EALREADY_REGISTERED">EALREADY_REGISTERED</a>));
-
-    // Freeze the FungibleStore <b>to</b> force usign the new overloaded api.
-    <b>let</b> extend_ref = <a href="object.md#0x1_object_generate_extend_ref">object::generate_extend_ref</a>(constructor_ref);
-    <a href="fungible_asset.md#0x1_fungible_asset_set_global_frozen_flag">fungible_asset::set_global_frozen_flag</a>(&extend_ref, <b>true</b>);
-
+    <a href="fungible_asset.md#0x1_fungible_asset_register_dispatch_functions">fungible_asset::register_dispatch_functions</a>(constructor_ref, withdraw_function, deposit_function);
     <b>let</b> store_obj = &<a href="object.md#0x1_object_generate_signer">object::generate_signer</a>(constructor_ref);
-
-    // Store the overload function hook.
-    <b>move_to</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(store_obj, <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
-        withdraw_function,
-		    deposit_function,
+    <b>move_to</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a>&gt;(store_obj, <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a> {
         transfer_ref: <a href="fungible_asset.md#0x1_fungible_asset_generate_transfer_ref">fungible_asset::generate_transfer_ref</a>(constructor_ref),
     });
 }
@@ -231,17 +156,17 @@ The semantics of deposit will be governed by the function specified in DispatchF
     owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     store: Object&lt;T&gt;,
     amount: u64,
-): FungibleAsset <b>acquires</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
-    <b>let</b> metadata_addr = <a href="object.md#0x1_object_object_address">object::object_address</a>(&<a href="fungible_asset.md#0x1_fungible_asset_store_metadata">fungible_asset::store_metadata</a>(store));
-    <b>let</b> owner_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner);
-    <b>if</b>(<b>exists</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr)) {
-        <b>let</b> overloadable_store = <b>borrow_global</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr);
+): FungibleAsset <b>acquires</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a> {
+    <b>if</b>(<a href="fungible_asset.md#0x1_fungible_asset_is_dispatchable">fungible_asset::is_dispatchable</a>(store)) {
+        <b>assert</b>!(<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_dispatchable_fungible_asset_enabled">features::dispatchable_fungible_asset_enabled</a>(), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_aborted">error::aborted</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_ENOT_ACTIVATED">ENOT_ACTIVATED</a>));
+        <b>let</b> func = <a href="fungible_asset.md#0x1_fungible_asset_withdraw_function">fungible_asset::withdraw_function</a>(store);
+        <a href="function_info.md#0x1_function_info_load_function">function_info::load_function</a>(&func);
         <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_dispatchable_withdraw">dispatchable_withdraw</a>(
-            owner_address,
+            <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner),
             store,
             amount,
-            &overloadable_store.transfer_ref,
-            &overloadable_store.withdraw_function,
+            <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_borrow_transfer_ref">borrow_transfer_ref</a>(store),
+            &func,
         )
     } <b>else</b> {
         <a href="fungible_asset.md#0x1_fungible_asset_withdraw">fungible_asset::withdraw</a>(owner, store, amount)
@@ -274,19 +199,48 @@ The semantics of deposit will be governed by the function specified in DispatchF
 <pre><code><b>public</b> <b>fun</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_deposit">deposit</a>&lt;T: key&gt;(
     store: Object&lt;T&gt;,
     fa: FungibleAsset
-) <b>acquires</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
-    <b>let</b> metadata_addr = <a href="object.md#0x1_object_object_address">object::object_address</a>(&<a href="fungible_asset.md#0x1_fungible_asset_store_metadata">fungible_asset::store_metadata</a>(store));
-    <b>if</b>(<b>exists</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr)) {
-        <b>let</b> overloadable_store = <b>borrow_global</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr);
+) <b>acquires</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a> {
+    <b>if</b>(<a href="fungible_asset.md#0x1_fungible_asset_is_dispatchable">fungible_asset::is_dispatchable</a>(store)) {
+        <b>assert</b>!(<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_dispatchable_fungible_asset_enabled">features::dispatchable_fungible_asset_enabled</a>(), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_aborted">error::aborted</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_ENOT_ACTIVATED">ENOT_ACTIVATED</a>));
+        <b>let</b> func = <a href="fungible_asset.md#0x1_fungible_asset_deposit_function">fungible_asset::deposit_function</a>(store);
+        <a href="function_info.md#0x1_function_info_load_function">function_info::load_function</a>(&func);
         <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_dispatchable_deposit">dispatchable_deposit</a>(
             store,
             fa,
-            &overloadable_store.transfer_ref,
-            &overloadable_store.deposit_function,
+            <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_borrow_transfer_ref">borrow_transfer_ref</a>(store),
+            &func
         )
     } <b>else</b> {
         <a href="fungible_asset.md#0x1_fungible_asset_deposit">fungible_asset::deposit</a>(store, fa)
     }
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_dispatchable_fungible_asset_borrow_transfer_ref"></a>
+
+## Function `borrow_transfer_ref`
+
+
+
+<pre><code><b>fun</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_borrow_transfer_ref">borrow_transfer_ref</a>&lt;T: key&gt;(metadata: <a href="object.md#0x1_object_Object">object::Object</a>&lt;T&gt;): &<a href="fungible_asset.md#0x1_fungible_asset_TransferRef">fungible_asset::TransferRef</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code>inline <b>fun</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_borrow_transfer_ref">borrow_transfer_ref</a>&lt;T: key&gt;(
+    metadata: Object&lt;T&gt;
+): &TransferRef <b>acquires</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a> {
+    <b>let</b> metadata_addr = <a href="object.md#0x1_object_object_address">object::object_address</a>(&<a href="fungible_asset.md#0x1_fungible_asset_store_metadata">fungible_asset::store_metadata</a>(metadata));
+    <b>assert</b>!(<b>exists</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a>&gt;(metadata_addr), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_ESTORE_NOT_FOUND">ESTORE_NOT_FOUND</a>));
+    &<b>borrow_global</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a>&gt;(metadata_addr).transfer_ref
 }
 </code></pre>
 
@@ -315,11 +269,8 @@ A transfer with a fixed amount debited from the sender
     from: Object&lt;T&gt;,
     <b>to</b>: Object&lt;T&gt;,
     send_amount: u64,
-) <b>acquires</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
-    <b>let</b> metadata_addr = <a href="object.md#0x1_object_object_address">object::object_address</a>(&<a href="fungible_asset.md#0x1_fungible_asset_store_metadata">fungible_asset::store_metadata</a>(from));
-    <b>assert</b>!(<b>exists</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EFUNCTION_STORE_NOT_FOUND">EFUNCTION_STORE_NOT_FOUND</a>));
-    <b>let</b> overloadable_store = <b>borrow_global</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr);
-    <b>let</b> fa = <a href="fungible_asset.md#0x1_fungible_asset_withdraw_with_ref">fungible_asset::withdraw_with_ref</a>(&overloadable_store.transfer_ref, from, send_amount);
+) <b>acquires</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a> {
+    <b>let</b> fa = <a href="fungible_asset.md#0x1_fungible_asset_withdraw_with_ref">fungible_asset::withdraw_with_ref</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_borrow_transfer_ref">borrow_transfer_ref</a>(from), from, send_amount);
     <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_deposit">deposit</a>(<b>to</b>, fa);
 }
 </code></pre>
@@ -349,12 +300,9 @@ A transfer with a fixed amount credited to the recipient
     from: Object&lt;T&gt;,
     <b>to</b>: Object&lt;T&gt;,
     receive_amount: u64,
-) <b>acquires</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
+) <b>acquires</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a> {
     <b>let</b> fa = <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_withdraw">withdraw</a>(sender, from, receive_amount);
-    <b>let</b> metadata_addr = <a href="object.md#0x1_object_object_address">object::object_address</a>(&<a href="fungible_asset.md#0x1_fungible_asset_store_metadata">fungible_asset::store_metadata</a>(from));
-    <b>let</b> overloadable_store = <b>borrow_global</b>&lt;<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr);
-    <b>assert</b>!(<a href="fungible_asset.md#0x1_fungible_asset_amount">fungible_asset::amount</a>(&fa) == receive_amount, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_aborted">error::aborted</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_EAMOUNT_MISMATCH">EAMOUNT_MISMATCH</a>));
-    <a href="fungible_asset.md#0x1_fungible_asset_deposit_with_ref">fungible_asset::deposit_with_ref</a>(&overloadable_store.transfer_ref, <b>to</b>, fa);
+    <a href="fungible_asset.md#0x1_fungible_asset_deposit_with_ref">fungible_asset::deposit_with_ref</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_borrow_transfer_ref">borrow_transfer_ref</a>(from), <b>to</b>, fa);
 }
 </code></pre>
 
