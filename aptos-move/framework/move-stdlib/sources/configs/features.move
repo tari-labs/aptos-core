@@ -436,6 +436,13 @@ module std::features {
         is_enabled(MULTISIG_V2_ENHANCEMENT)
     }
 
+    const OBJECT_NATIVE_DERIVED_ADDRESS: u64 = 56;
+
+    public fun get_object_native_derived_address_feature(): u64 { OBJECT_NATIVE_DERIVED_ADDRESS }
+
+    public fun object_native_derived_address_enabled(): bool acquires Features {
+        is_enabled(OBJECT_NATIVE_DERIVED_ADDRESS)
+    }
 
     // ============================================================================================
     // Feature Flag Implementation

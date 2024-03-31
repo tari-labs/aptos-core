@@ -7,7 +7,6 @@ use aptos_native_interface::{
 };
 use aptos_types::transaction::authenticator::AuthenticationKey;
 use better_any::{Tid, TidAble};
-use move_core_types::account_address::AccountAddress;
 use move_vm_runtime::native_functions::NativeFunction;
 use move_vm_types::{loaded_data::runtime_types::Type, values::Value};
 use smallvec::{smallvec, SmallVec};
@@ -80,16 +79,12 @@ fn native_generate_unique_address(
         .get_mut::<NativeTransactionContext>();
     transaction_context.auid_counter += 1;
 
-    let hash_vec = AuthenticationKey::auid(
+    let auid = AuthenticationKey::auid(
         transaction_context.txn_hash.clone(),
         transaction_context.auid_counter,
-    );
-    Ok(smallvec![Value::address(AccountAddress::new(
-        hash_vec
-            .to_vec()
-            .try_into()
-            .expect("Unable to convert hash vector into [u8]")
-    ))])
+    )
+    .account_address();
+    Ok(smallvec![Value::address(auid)])
 }
 
 /***************************************************************************************************
