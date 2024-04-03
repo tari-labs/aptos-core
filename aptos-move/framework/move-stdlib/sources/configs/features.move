@@ -476,7 +476,8 @@ module std::features {
         is_enabled(MODULE_EVENT_MIGRATION)
     }
 
-    /// Whether the transaction context extension is enabled.
+    /// Whether the transaction context extension is enabled. This feature allows the module
+    /// `transaction_context` to provide contextual information about the user transaction.
     ///
     /// Lifetime: transient
     const TRANSACTION_CONTEXT_EXTENSION: u64 = 58;
