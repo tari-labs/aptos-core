@@ -277,7 +277,7 @@ impl From<FeatureFlag> for AptosFeatureFlag {
             FeatureFlag::RejectUnstableBytecode => AptosFeatureFlag::REJECT_UNSTABLE_BYTECODE,
             FeatureFlag::CoinToFungibleAssetMigration => {
                 AptosFeatureFlag::COIN_TO_FUNGIBLE_ASSET_MIGRATION
-            }
+            },
         }
     }
 }

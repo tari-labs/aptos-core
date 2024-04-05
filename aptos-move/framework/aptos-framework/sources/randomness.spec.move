@@ -81,6 +81,7 @@ spec aptos_framework::randomness {
     }
 
     spec u256_integer(): u256 {
+        pragma verify_duration_estimate = 120;
         pragma unroll = 32;
         include NextBlobAbortsIf;
         ensures [abstract] result == spec_u256_integer();
