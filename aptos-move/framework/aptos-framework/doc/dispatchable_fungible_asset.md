@@ -159,7 +159,7 @@ The semantics of deposit will be governed by the function specified in DispatchF
 ): FungibleAsset <b>acquires</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a> {
     <b>if</b>(<a href="fungible_asset.md#0x1_fungible_asset_is_dispatchable">fungible_asset::is_dispatchable</a>(store)) {
         <b>assert</b>!(<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_dispatchable_fungible_asset_enabled">features::dispatchable_fungible_asset_enabled</a>(), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_aborted">error::aborted</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_ENOT_ACTIVATED">ENOT_ACTIVATED</a>));
-        <b>let</b> func = <a href="fungible_asset.md#0x1_fungible_asset_withdraw_function">fungible_asset::withdraw_function</a>(store);
+        <b>let</b> func = <a href="fungible_asset.md#0x1_fungible_asset_withdraw_dispatch_function">fungible_asset::withdraw_dispatch_function</a>(store);
         <a href="function_info.md#0x1_function_info_load_function">function_info::load_function</a>(&func);
         <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_dispatchable_withdraw">dispatchable_withdraw</a>(
             <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner),
@@ -202,7 +202,7 @@ The semantics of deposit will be governed by the function specified in DispatchF
 ) <b>acquires</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_TransferRefStore">TransferRefStore</a> {
     <b>if</b>(<a href="fungible_asset.md#0x1_fungible_asset_is_dispatchable">fungible_asset::is_dispatchable</a>(store)) {
         <b>assert</b>!(<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_dispatchable_fungible_asset_enabled">features::dispatchable_fungible_asset_enabled</a>(), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_aborted">error::aborted</a>(<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_ENOT_ACTIVATED">ENOT_ACTIVATED</a>));
-        <b>let</b> func = <a href="fungible_asset.md#0x1_fungible_asset_deposit_function">fungible_asset::deposit_function</a>(store);
+        <b>let</b> func = <a href="fungible_asset.md#0x1_fungible_asset_deposit_dispatch_function">fungible_asset::deposit_dispatch_function</a>(store);
         <a href="function_info.md#0x1_function_info_load_function">function_info::load_function</a>(&func);
         <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset_dispatchable_deposit">dispatchable_deposit</a>(
             store,

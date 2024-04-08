@@ -41,8 +41,8 @@ metadata object can be any object that equipped with <code><a href="fungible_ass
 -  [Function `balance`](#0x1_fungible_asset_balance)
 -  [Function `is_frozen`](#0x1_fungible_asset_is_frozen)
 -  [Function `is_dispatchable`](#0x1_fungible_asset_is_dispatchable)
--  [Function `deposit_function`](#0x1_fungible_asset_deposit_function)
--  [Function `withdraw_function`](#0x1_fungible_asset_withdraw_function)
+-  [Function `deposit_dispatch_function`](#0x1_fungible_asset_deposit_dispatch_function)
+-  [Function `withdraw_dispatch_function`](#0x1_fungible_asset_withdraw_dispatch_function)
 -  [Function `asset_metadata`](#0x1_fungible_asset_asset_metadata)
 -  [Function `mint_ref_metadata`](#0x1_fungible_asset_mint_ref_metadata)
 -  [Function `transfer_ref_metadata`](#0x1_fungible_asset_transfer_ref_metadata)
@@ -1501,13 +1501,13 @@ Return whether a fungible asset type is dispatchable.
 
 </details>
 
-<a id="0x1_fungible_asset_deposit_function"></a>
+<a id="0x1_fungible_asset_deposit_dispatch_function"></a>
 
-## Function `deposit_function`
+## Function `deposit_dispatch_function`
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_deposit_function">deposit_function</a>&lt;T: key&gt;(store: <a href="object.md#0x1_object_Object">object::Object</a>&lt;T&gt;): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_deposit_dispatch_function">deposit_dispatch_function</a>&lt;T: key&gt;(store: <a href="object.md#0x1_object_Object">object::Object</a>&lt;T&gt;): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
 </code></pre>
 
 
@@ -1516,7 +1516,7 @@ Return whether a fungible asset type is dispatchable.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_deposit_function">deposit_function</a>&lt;T: key&gt;(store: Object&lt;T&gt;): FunctionInfo <b>acquires</b> <a href="fungible_asset.md#0x1_fungible_asset_FungibleStore">FungibleStore</a>, <a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_deposit_dispatch_function">deposit_dispatch_function</a>&lt;T: key&gt;(store: Object&lt;T&gt;): FunctionInfo <b>acquires</b> <a href="fungible_asset.md#0x1_fungible_asset_FungibleStore">FungibleStore</a>, <a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
     <b>let</b> fa_store = <a href="fungible_asset.md#0x1_fungible_asset_borrow_store_resource">borrow_store_resource</a>(&store);
     <b>let</b> metadata_addr = <a href="object.md#0x1_object_object_address">object::object_address</a>(&fa_store.metadata);
     <b>borrow_global</b>&lt;<a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr).deposit_function
@@ -1527,13 +1527,13 @@ Return whether a fungible asset type is dispatchable.
 
 </details>
 
-<a id="0x1_fungible_asset_withdraw_function"></a>
+<a id="0x1_fungible_asset_withdraw_dispatch_function"></a>
 
-## Function `withdraw_function`
+## Function `withdraw_dispatch_function`
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_withdraw_function">withdraw_function</a>&lt;T: key&gt;(store: <a href="object.md#0x1_object_Object">object::Object</a>&lt;T&gt;): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_withdraw_dispatch_function">withdraw_dispatch_function</a>&lt;T: key&gt;(store: <a href="object.md#0x1_object_Object">object::Object</a>&lt;T&gt;): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
 </code></pre>
 
 
@@ -1542,7 +1542,7 @@ Return whether a fungible asset type is dispatchable.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_withdraw_function">withdraw_function</a>&lt;T: key&gt;(store: Object&lt;T&gt;): FunctionInfo <b>acquires</b> <a href="fungible_asset.md#0x1_fungible_asset_FungibleStore">FungibleStore</a>, <a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_withdraw_dispatch_function">withdraw_dispatch_function</a>&lt;T: key&gt;(store: Object&lt;T&gt;): FunctionInfo <b>acquires</b> <a href="fungible_asset.md#0x1_fungible_asset_FungibleStore">FungibleStore</a>, <a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
     <b>let</b> fa_store = <a href="fungible_asset.md#0x1_fungible_asset_borrow_store_resource">borrow_store_resource</a>(&store);
     <b>let</b> metadata_addr = <a href="object.md#0x1_object_object_address">object::object_address</a>(&fa_store.metadata);
     <b>borrow_global</b>&lt;<a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr).withdraw_function
