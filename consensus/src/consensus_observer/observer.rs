@@ -26,7 +26,7 @@ use aptos_types::{
     epoch_state::EpochState,
     ledger_info::LedgerInfoWithSignatures,
     on_chain_config::{
-        Features, OnChainConsensusConfig, OnChainExecutionConfig, OnChainRandomnessConfig,
+        OnChainConsensusConfig, OnChainExecutionConfig, OnChainRandomnessConfig,
         RandomnessConfigMoveStruct, ValidatorSet,
     },
     transaction::SignedTransaction,
@@ -331,45 +331,42 @@ impl Observer {
         loop {
             tokio::select! {
                 Some(event) = network_events.next() => {
-                    match event {
-                        Event::Message(peer, msg) => {
-                            // todo: verify messages
-                           match msg {
-                               ObserverMessage::OrderedBlock(ordered_block) => {
-                                    info!(
-                                        "[Observer] received ordered block {} from {}.",
-                                        ordered_block.ordered_proof.commit_info(),
-                                        peer,
-                                    );
-                                    self.process_ordered_block(ordered_block).await;
+                   if let Event::Message(peer, msg) = event {
+                       // todo: verify messages
+                      match msg {
+                          ObserverMessage::OrderedBlock(ordered_block) => {
+                               info!(
+                                   "[Observer] received ordered block {} from {}.",
+                                   ordered_block.ordered_proof.commit_info(),
+                                   peer,
+                               );
+                               self.process_ordered_block(ordered_block).await;
+                          }
+                          ObserverMessage::CommitDecision(msg) => {
+                               info!(
+                                   "[Observer] received commit decision {} from {}.",
+                                   msg.ledger_info().commit_info(),
+                                   peer,
+                               );
+                               self.process_commit_decision(msg);
+                          }
+                           ObserverMessage::Payload((block, payload)) => {
+                               info!("[Observer] received payload {} from {}", block, peer);
+                               match self.payload_store.lock().entry(block.id()) {
+                                   Entry::Occupied(mut entry) => {
+                                       let mut status = ObserverDataStatus::Available(payload.clone());
+                                       mem::swap(entry.get_mut(), &mut status);
+                                       if let ObserverDataStatus::Requested(tx) = status {
+                                           tx.send(payload).unwrap();
+                                       }
+                                   }
+                                   Entry::Vacant(entry) => {
+                                       entry.insert(ObserverDataStatus::Available(payload));
+                                   }
                                }
-                               ObserverMessage::CommitDecision(msg) => {
-                                    info!(
-                                        "[Observer] received commit decision {} from {}.",
-                                        msg.ledger_info().commit_info(),
-                                        peer,
-                                    );
-                                    self.process_commit_decision(msg);
-                               }
-                                ObserverMessage::Payload((block, payload)) => {
-                                    info!("[Observer] received payload {} from {}", block, peer);
-                                    match self.payload_store.lock().entry(block.id()) {
-                                        Entry::Occupied(mut entry) => {
-                                            let mut status = ObserverDataStatus::Available(payload.clone());
-                                            mem::swap(entry.get_mut(), &mut status);
-                                            if let ObserverDataStatus::Requested(tx) = status {
-                                                tx.send(payload).unwrap();
-                                            }
-                                        }
-                                        Entry::Vacant(entry) => {
-                                            entry.insert(ObserverDataStatus::Available(payload));
-                                        }
-                                    }
-                                }
                            }
-                        }
-                        _ => {},
-                    }
+                      }
+                   }
                 },
                 Some((epoch, round)) = notifier_rx.recv() => {
                     self.process_sync_notify(epoch, round).await;
