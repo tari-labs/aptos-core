@@ -29,8 +29,14 @@ module aptos_framework::function_info {
         module_name: String,
         function_name: String,
     ): FunctionInfo {
-        assert!(is_identifier(string::bytes(&module_name)), EINVALID_IDENTIFIER);
-        assert!(is_identifier(string::bytes(&function_name)), EINVALID_IDENTIFIER);
+        assert!(
+            is_identifier(string::bytes(&module_name)),
+            EINVALID_IDENTIFIER
+        );
+        assert!(
+            is_identifier(string::bytes(&function_name)),
+            EINVALID_IDENTIFIER
+        );
         FunctionInfo {
             module_address,
             module_name,
@@ -52,7 +58,10 @@ module aptos_framework::function_info {
         framework_function: &FunctionInfo,
         dispatch_target: &FunctionInfo,
     ): bool {
-        assert!(features::dispatchable_fungible_asset_enabled(), error::aborted(ENOT_ACTIVATED));
+        assert!(
+            features::dispatchable_fungible_asset_enabled(),
+            error::aborted(ENOT_ACTIVATED)
+        );
         load_function_impl(dispatch_target);
         check_dispatch_type_compatibility_impl(framework_function, dispatch_target)
     }

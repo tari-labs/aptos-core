@@ -228,40 +228,61 @@ module aptos_framework::fungible_asset {
     public(friend) fun register_dispatch_functions(
         constructor_ref: &ConstructorRef,
         withdraw_function: FunctionInfo,
-		deposit_function: FunctionInfo,
+        deposit_function: FunctionInfo,
     ) {
         let dispatcher_withdraw_function_info = function_info::new_function_info(
-	        @aptos_framework,
+            @aptos_framework,
             string::utf8(b"dispatchable_fungible_asset"),
             string::utf8(b"dispatchable_withdraw"),
         );
         // Verify that caller type matches callee type so wrongly typed function cannot be registered.
-        assert!(function_info::check_dispatch_type_compatibility(
-            &dispatcher_withdraw_function_info,
-            &withdraw_function
-        ), error::invalid_argument(EWITHDRAW_FUNCTION_SIGNATURE_MISMATCH));
+        assert!(
+            function_info::check_dispatch_type_compatibility(
+                &dispatcher_withdraw_function_info,
+                &withdraw_function
+            ),
+            error::invalid_argument(
+                EWITHDRAW_FUNCTION_SIGNATURE_MISMATCH
+            )
+        );
 
         let dispatcher_deposit_function_info = function_info::new_function_info(
-	        @aptos_framework,
+            @aptos_framework,
             string::utf8(b"dispatchable_fungible_asset"),
             string::utf8(b"dispatchable_deposit"),
         );
         // Verify that caller type matches callee type so wrongly typed function cannot be registered.
-        assert!(function_info::check_dispatch_type_compatibility(
-            &dispatcher_deposit_function_info,
-            &deposit_function
-        ), error::invalid_argument(EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH));
+        assert!(
+            function_info::check_dispatch_type_compatibility(
+                &dispatcher_deposit_function_info,
+                &deposit_function
+            ),
+            error::invalid_argument(
+                EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH
+            )
+        );
 
-        assert!(!object::can_generate_delete_ref(constructor_ref), error::invalid_argument(EOBJECT_IS_DELETABLE));
-        assert!(!exists<DispatchFunctionStore>(object::address_from_constructor_ref(constructor_ref)), error::already_exists(EALREADY_REGISTERED));
+        assert!(
+            !object::can_generate_delete_ref(constructor_ref),
+            error::invalid_argument(EOBJECT_IS_DELETABLE)
+        );
+        assert!(
+            !exists<DispatchFunctionStore>(
+                object::address_from_constructor_ref(constructor_ref)
+            ),
+            error::already_exists(EALREADY_REGISTERED)
+        );
 
         let store_obj = &object::generate_signer(constructor_ref);
 
         // Store the overload function hook.
-        move_to<DispatchFunctionStore>(store_obj, DispatchFunctionStore {
-            withdraw_function,
-		    deposit_function,
-        });
+        move_to<DispatchFunctionStore>(
+            store_obj,
+            DispatchFunctionStore {
+                withdraw_function,
+                deposit_function,
+            }
+        );
     }
 
     /// Creates a mint ref that can be used to mint fungible assets from the given fungible object's constructor ref.
