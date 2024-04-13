@@ -61,6 +61,7 @@ pub struct ProcessedModule {
 }
 
 pub struct CompiledState<'a> {
+    deps_files: &'a [String],
     pre_compiled_deps: Option<&'a FullyCompiledProgram>,
     pre_compiled_ids: BTreeSet<(AccountAddress, String)>,
     compiled_module_named_address_mapping: BTreeMap<ModuleId, Symbol>,
@@ -133,6 +134,7 @@ pub trait MoveTestAdapter<'a>: Sized {
         default_syntax: SyntaxChoice,
         comparison_mode: bool,
         run_config: TestRunConfig,
+        deps_files: &'a [String],
         option: Option<&'a FullyCompiledProgram>,
         init_data: Option<TaskInput<(InitCommand, Self::ExtraInitArgs)>>,
     ) -> (Self, Option<String>);
@@ -207,7 +209,7 @@ pub trait MoveTestAdapter<'a>: Sized {
                 },
             ) => {
                 let ((module, _), warning_opt) = compile_source_unit_v2(
-                    state.pre_compiled_deps,
+                    state.deps_files,
                     state.named_address_mapping.clone(),
                     &state.source_files().cloned().collect::<Vec<_>>(),
                     data_path.to_owned(),
@@ -281,7 +283,7 @@ pub trait MoveTestAdapter<'a>: Sized {
                 },
             ) => {
                 let ((_, script), warning_opt) = compile_source_unit_v2(
-                    state.pre_compiled_deps,
+                    state.deps_files,
                     state.named_address_mapping.clone(),
                     &state.source_files().cloned().collect::<Vec<_>>(),
                     data_path.to_owned(),
@@ -558,6 +560,7 @@ fn display_return_values(return_values: SerializedReturnValues) -> Option<String
 impl<'a> CompiledState<'a> {
     pub fn new(
         named_address_mapping: BTreeMap<String, NumericalAddress>,
+        deps_files: &'a [String],
         pre_compiled_deps: Option<&'a FullyCompiledProgram>,
         default_named_address_mapping: Option<NumericalAddress>,
     ) -> Self {
@@ -576,6 +579,7 @@ impl<'a> CompiledState<'a> {
                 .collect(),
         };
         let mut state = Self {
+            deps_files,
             pre_compiled_deps,
             pre_compiled_ids,
             modules: BTreeMap::new(),
@@ -680,7 +684,7 @@ impl<'a> CompiledState<'a> {
 }
 
 fn compile_source_unit_v2(
-    pre_compiled_deps: Option<&FullyCompiledProgram>,
+    deps_files: &[String],
     named_address_mapping: BTreeMap<String, NumericalAddress>,
     deps: &[String],
     path: String,
@@ -691,14 +695,13 @@ fn compile_source_unit_v2(
     (Option<CompiledModule>, Option<CompiledScript>),
     Option<String>,
 )> {
-    let deps = if let Some(p) = pre_compiled_deps {
+    let deps = {
         // The v2 compiler does not (and perhaps never) supports precompiled programs, so
         // compile from the sources again, computing the directories where they are found.
-        let mut dirs: BTreeSet<_> = p
-            .files
+        let mut dirs = deps_files
             .iter()
-            .filter_map(|(_, (file_name, _))| {
-                Path::new(file_name.as_str())
+            .filter_map(|file_name| {
+                Path::new(file_name)
                     .parent()
                     .map(|p| p.to_string_lossy().to_string())
             })
@@ -706,8 +709,6 @@ fn compile_source_unit_v2(
         remove_sub_dirs(&mut dirs);
         dirs.extend(deps.iter().cloned());
         dirs.into_iter().collect()
-    } else {
-        deps.to_vec()
     };
 
     let mut options = move_compiler_v2::Options {
@@ -837,6 +838,7 @@ fn compile_ir_script<'a>(
 pub fn run_test_impl<'a, Adapter>(
     config: TestRunConfig,
     path: &Path,
+    deps_files: &'a [String],
     fully_compiled_program_opt: Option<&'a FullyCompiledProgram>,
     exp_suffix: &Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>>
@@ -911,6 +913,7 @@ where
             default_syntax,
             comparison_mode,
             run_config.clone(),
+            deps_files,
             fully_compiled_program_opt,
             init_opt,
         );

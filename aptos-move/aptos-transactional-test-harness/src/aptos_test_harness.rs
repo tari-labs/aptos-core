@@ -311,6 +311,12 @@ static PRECOMPILED_APTOS_FRAMEWORK: Lazy<FullyCompiledProgram> = Lazy::new(|| {
     }
 });
 
+static APTOS_FRAMEWORK_FILES: Lazy<Vec<String>> = Lazy::new(|| {
+    aptos_cached_packages::head_release_bundle()
+        .files()
+        .unwrap();
+});
+
 /**
  * Test Adapter Implementation
  */
@@ -574,6 +580,7 @@ impl<'a> MoveTestAdapter<'a> for AptosTestAdapter<'a> {
         default_syntax: SyntaxChoice,
         comparison_mode: bool,
         run_config: TestRunConfig,
+        dep_files: &'a [String],
         pre_compiled_deps: Option<&'a FullyCompiledProgram>,
         task_opt: Option<TaskInput<(InitCommand, Self::ExtraInitArgs)>>,
     ) -> (Self, Option<String>) {
@@ -968,5 +975,11 @@ pub fn run_aptos_test_with_config(
     path: &Path,
     config: TestRunConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    run_test_impl::<AptosTestAdapter>(config, path, Some(&*PRECOMPILED_APTOS_FRAMEWORK), &None)
+    run_test_impl::<AptosTestAdapter>(
+        config,
+        path,
+        &*APTOS_FRAMEWORK_FILES,
+        Some(&*PRECOMPILED_APTOS_FRAMEWORK),
+        &None,
+    )
 }

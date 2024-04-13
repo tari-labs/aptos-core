@@ -327,6 +327,20 @@ pub fn warn_of_deprecation_use_in_aptos_libs_env_var_str() -> &'static str {
     }
 }
 
+pub fn move_compiler_block_v1_runs_env_var() -> bool {
+    static BLOCK_V1_RUNS: Lazy<bool> =
+        Lazy::new(|| read_bool_env_var(cli::MOVE_COMPILER_BLOCK_V1_RUNS));
+    *BLOCK_V1_RUNS
+}
+
+pub fn move_compiler_block_v1_runs_env_var_str() -> &'static str {
+    if move_compiler_block_v1_runs_env_var() {
+        "true"
+    } else {
+        "false"
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Parser)]
 pub struct Flags {
     /// Compile in test mode
@@ -398,6 +412,10 @@ pub struct Flags {
     /// Support v2 syntax (up to expansion phase)
     #[clap(long = cli::V2_FLAG)]
     v2: bool,
+
+    /// Block v1 runs past expansion phase
+    #[clap(long = cli::MOVE_COMPILER_BLOCK_V1_RUNS_FLAG, default_value=move_compiler_block_v1_runs_env_var_str())]
+    block_v1_runs: bool,
 }
 
 impl Flags {
@@ -415,6 +433,7 @@ impl Flags {
             warn_of_deprecation_use_in_aptos_libs: warn_of_deprecation_use_in_aptos_libs_env_var(),
             warn_unused: false,
             v2: false,
+            block_v1_runs: move_compiler_block_v1_runs_env_var(),
         }
     }
 
@@ -432,6 +451,7 @@ impl Flags {
             warn_of_deprecation_use_in_aptos_libs: warn_of_deprecation_use_in_aptos_libs_env_var(),
             warn_unused: false,
             v2: false,
+            block_v1_runs: move_compiler_block_v1_runs_env_var(),
         }
     }
 
@@ -449,6 +469,7 @@ impl Flags {
             warn_of_deprecation_use_in_aptos_libs: warn_of_deprecation_use_in_aptos_libs_env_var(),
             warn_unused: false,
             v2: false,
+            block_v1_runs: move_compiler_block_v1_runs_env_var(),
         }
     }
 
@@ -466,6 +487,7 @@ impl Flags {
             warn_of_deprecation_use_in_aptos_libs: warn_of_deprecation_use_in_aptos_libs_env_var(),
             warn_unused: false,
             v2: false,
+            block_v1_runs: move_compiler_block_v1_runs_env_var(),
         }
     }
 
@@ -483,6 +505,7 @@ impl Flags {
             warn_of_deprecation_use_in_aptos_libs: warn_of_deprecation_use_in_aptos_libs_env_var(),
             warn_unused: false,
             v2: true,
+            block_v1_runs: move_compiler_block_v1_runs_env_var(),
         }
     }
 
@@ -564,6 +587,17 @@ impl Flags {
     pub fn set_warn_of_deprecation_use_in_aptos_libs(self, new_value: bool) -> Self {
         Self {
             warn_of_deprecation_use_in_aptos_libs: new_value,
+            ..self
+        }
+    }
+
+    pub fn get_block_v1_runs(&self) -> bool {
+        self.block_v1_runs
+    }
+
+    pub fn set_block_v1_runs(self, new_value: bool) -> Self {
+        Self {
+            block_v1_runs: new_value,
             ..self
         }
     }

@@ -55,6 +55,13 @@ pub const MOVE_COMPILER_WARN_OF_DEPRECATION_USE_FLAG: &str = "Wdeprecation";
 pub const WARN_OF_DEPRECATION_USE_IN_APTOS_LIBS: &str = "WARN_OF_DEPRECATION_USE_IN_APTOS_LIBS";
 pub const WARN_OF_DEPRECATION_USE_IN_APTOS_LIBS_FLAG: &str = "Wdeprecation-aptos";
 
+pub const MOVE_COMPILER_BLOCK_V1_RUNS: &str = "MOVE_COMPILER_V2";
+pub const MOVE_COMPILER_BLOCK_V1_RUNS_FLAG: &str = "block-v1-runs";
+
 pub const WARN_UNUSED_FLAG: &str = "Wunused";
 
 pub const V2_FLAG: &str = "v2";
+
+// Flag to dump a stacktrace on a compiler error, since Wolfgang can't
+// manage to turn off RUST_BACKTRACE when he doesn't want to use it.
+pub const MOVE_COMPILER_BACKTRACE_ENV_VAR: &str = "MOVE_COMPILER_BACKTRACE";

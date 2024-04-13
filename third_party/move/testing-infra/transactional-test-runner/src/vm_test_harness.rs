@@ -20,7 +20,7 @@ use move_command_line_common::{
     address::ParsedAddress, env::read_bool_env_var, files::verify_and_create_named_address_mapping,
 };
 use move_compiler::{
-    compiled_unit::AnnotatedCompiledUnit,
+    compiled_unit::{AnnotatedCompiledUnit, NamedCompiledModule},
     shared::{known_attributes::KnownAttribute, Flags, PackagePaths},
     FullyCompiledProgram,
 };
@@ -44,6 +44,7 @@ use move_vm_test_utils::{gas_schedule::GasStatus, InMemoryStorage};
 use once_cell::sync::Lazy;
 use std::{
     collections::{BTreeMap, BTreeSet},
+    iter::Iterator,
     path::Path,
 };
 
@@ -111,6 +112,25 @@ fn move_test_debug() -> bool {
     *MOVE_TEST_DEBUG
 }
 
+fn pre_compiled_deps_to_modules<'a>(
+    pre_compiled_deps: &'a FullyCompiledProgram,
+) -> impl Iterator<Item = &'a CompiledModule> {
+    pre_compiled_deps
+        .compiled
+        .iter()
+        .filter_map(|unit: &AnnotatedCompiledUnit| {
+            let result: Option<&CompiledModule> = if let AnnotatedCompiledUnit::Module(tmod) = unit
+            {
+                let named_module: &NamedCompiledModule = &tmod.named_module;
+                let module: &CompiledModule = &named_module.module;
+                Some(module)
+            } else {
+                None
+            };
+            result
+        })
+}
+
 impl<'a> MoveTestAdapter<'a> for SimpleVMTestAdapter<'a> {
     type ExtraInitArgs = EmptyCommand;
     type ExtraPublishArgs = AdapterPublishArgs;
@@ -138,6 +158,7 @@ impl<'a> MoveTestAdapter<'a> for SimpleVMTestAdapter<'a> {
         default_syntax: SyntaxChoice,
         comparison_mode: bool,
         run_config: TestRunConfig,
+        pre_compiled_files: &'a [String],
         pre_compiled_deps: Option<&'a FullyCompiledProgram>,
         task_opt: Option<TaskInput<(InitCommand, EmptyCommand)>>,
     ) -> (Self, Option<String>) {
@@ -159,7 +180,12 @@ impl<'a> MoveTestAdapter<'a> for SimpleVMTestAdapter<'a> {
             named_address_mapping.insert(name, addr);
         }
         let mut adapter = Self {
-            compiled_state: CompiledState::new(named_address_mapping, pre_compiled_deps, None),
+            compiled_state: CompiledState::new(
+                named_address_mapping,
+                pre_compiled_files,
+                pre_compiled_deps,
+                None,
+            ),
             default_syntax,
             comparison_mode,
             run_config,
@@ -170,20 +196,22 @@ impl<'a> MoveTestAdapter<'a> for SimpleVMTestAdapter<'a> {
             .perform_session_action(
                 None,
                 |session, gas_status| {
-                    for module in &*MOVE_STDLIB_COMPILED {
-                        let mut module_bytes = vec![];
-                        module
-                            .serialize_for_version(
-                                Some(file_format_common::VERSION_MAX),
-                                &mut module_bytes,
-                            )
-                            .unwrap();
-                        let id = module.self_id();
-                        let sender = *id.address();
-                        session
-                            .publish_module(module_bytes, sender, gas_status)
-                            .unwrap();
-                    }
+                    if let Some(pre_compiled_deps) = pre_compiled_deps {
+                        for module in pre_compiled_deps_to_modules(pre_compiled_deps) {
+                            let mut module_bytes = vec![];
+                            module
+                                .serialize_for_version(
+                                    Some(file_format_common::VERSION_MAX),
+                                    &mut module_bytes,
+                                )
+                                .unwrap();
+                            let id = module.self_id();
+                            let sender = *id.address();
+                            session
+                                .publish_module(module_bytes, sender, gas_status)
+                                .unwrap();
+                        }
+                    };
                     Ok(())
                 },
                 VMConfig::production(),
@@ -194,15 +222,16 @@ impl<'a> MoveTestAdapter<'a> for SimpleVMTestAdapter<'a> {
             let prev = addr_to_name_mapping.insert(addr, Symbol::from(name));
             assert!(prev.is_none());
         }
-        for module in MOVE_STDLIB_COMPILED
-            .iter()
-            .filter(|module| !adapter.compiled_state.is_precompiled_dep(&module.self_id()))
-            .collect::<Vec<_>>()
-        {
-            adapter
-                .compiled_state
-                .add_and_generate_interface_file(module.clone());
-        }
+        if let Some(pre_compiled_deps) = pre_compiled_deps {
+            for module in pre_compiled_deps_to_modules(pre_compiled_deps)
+                .filter(|module| !adapter.compiled_state.is_precompiled_dep(&module.self_id()))
+                .collect::<Vec<_>>()
+            {
+                adapter
+                    .compiled_state
+                    .add_and_generate_interface_file(module.clone());
+            }
+        };
         (adapter, None)
     }
 
@@ -415,36 +444,7 @@ static PRECOMPILED_MOVE_STDLIB: Lazy<FullyCompiledProgram> = Lazy::new(|| {
     }
 });
 
-static MOVE_STDLIB_COMPILED: Lazy<Vec<CompiledModule>> = Lazy::new(|| {
-    let (files, units_res) = move_compiler::Compiler::from_files(
-        move_stdlib::move_stdlib_files(),
-        vec![],
-        move_stdlib::move_stdlib_named_addresses(),
-        Flags::empty().set_skip_attribute_checks(true), // no point in checking here.
-        KnownAttribute::get_all_attribute_names(),
-    )
-    .build()
-    .unwrap();
-    match units_res {
-        Err(diags) => {
-            eprintln!("!!!Standard library failed to compile!!!");
-            move_compiler::diagnostics::report_diagnostics(&files, diags)
-        },
-        Ok((_, warnings)) if !warnings.is_empty() => {
-            eprintln!("!!!Standard library failed to compile!!!");
-            move_compiler::diagnostics::report_diagnostics(&files, warnings)
-        },
-        Ok((units, _warnings)) => units
-            .into_iter()
-            .filter_map(|m| match m {
-                AnnotatedCompiledUnit::Module(annot_module) => {
-                    Some(annot_module.named_module.module)
-                },
-                AnnotatedCompiledUnit::Script(_) => None,
-            })
-            .collect(),
-    }
-});
+static MOVE_STDLIB_FILES: Lazy<Vec<String>> = Lazy::new(|| move_stdlib::move_stdlib_files());
 
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub enum TestRunConfig {
@@ -467,7 +467,18 @@ pub fn run_test_with_config(
     config: TestRunConfig,
     path: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    run_test_impl::<SimpleVMTestAdapter>(config, path, Some(&*PRECOMPILED_MOVE_STDLIB), &None)
+    if matches!(config, TestRunConfig::CompilerV2 { .. }) {
+        run_test_impl::<SimpleVMTestAdapter>(config, path, &MOVE_STDLIB_FILES, None, &None)
+    } else {
+        // panic!("shouldn't get here");
+        run_test_impl::<SimpleVMTestAdapter>(
+            config,
+            path,
+            &MOVE_STDLIB_FILES,
+            Some(&*PRECOMPILED_MOVE_STDLIB),
+            &None,
+        )
+    }
 }
 
 pub fn run_test_with_config_and_exp_suffix(
@@ -475,7 +486,18 @@ pub fn run_test_with_config_and_exp_suffix(
     path: &Path,
     exp_suffix: &Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    run_test_impl::<SimpleVMTestAdapter>(config, path, Some(&*PRECOMPILED_MOVE_STDLIB), exp_suffix)
+    if matches!(config, TestRunConfig::CompilerV2 { .. }) {
+        run_test_impl::<SimpleVMTestAdapter>(config, path, &MOVE_STDLIB_FILES, None, exp_suffix)
+    } else {
+        // panic!("shouldn't get here");
+        run_test_impl::<SimpleVMTestAdapter>(
+            config,
+            path,
+            &MOVE_STDLIB_FILES,
+            Some(&*PRECOMPILED_MOVE_STDLIB),
+            exp_suffix,
+        )
+    }
 }
 
 impl From<AdapterExecuteArgs> for VMConfig {
