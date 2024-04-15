@@ -29,7 +29,13 @@ module aptos_framework::deflation_token {
             string::utf8(b"deflation_token"),
             string::utf8(b"deposit"),
         );
-        dispatchable_fungible_asset::register_dispatch_functions(constructor_ref, withdraw, deposit);
+
+        let value = function_info::new_function_info(
+            @aptos_framework,
+            string::utf8(b"deflation_token"),
+            string::utf8(b"derived_value"),
+        );
+        dispatchable_fungible_asset::register_dispatch_functions(constructor_ref, withdraw, deposit, value);
     }
 
     public fun withdraw<T: key>(
@@ -53,6 +59,10 @@ module aptos_framework::deflation_token {
         transfer_ref: &TransferRef,
     ) {
         fungible_asset::deposit_with_ref(transfer_ref, store, fa);
+    }
+
+    public fun derived_value<T: key>(store: Object<T>): u64 {
+        fungible_asset::balance(store)
     }
 
     #[test_only]

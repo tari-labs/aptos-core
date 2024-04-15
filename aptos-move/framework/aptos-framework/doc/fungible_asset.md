@@ -43,6 +43,7 @@ metadata object can be any object that equipped with <code><a href="fungible_ass
 -  [Function `is_dispatchable`](#0x1_fungible_asset_is_dispatchable)
 -  [Function `deposit_dispatch_function`](#0x1_fungible_asset_deposit_dispatch_function)
 -  [Function `withdraw_dispatch_function`](#0x1_fungible_asset_withdraw_dispatch_function)
+-  [Function `derived_value_dispatch_function`](#0x1_fungible_asset_derived_value_dispatch_function)
 -  [Function `asset_metadata`](#0x1_fungible_asset_asset_metadata)
 -  [Function `mint_ref_metadata`](#0x1_fungible_asset_mint_ref_metadata)
 -  [Function `transfer_ref_metadata`](#0x1_fungible_asset_transfer_ref_metadata)
@@ -275,6 +276,12 @@ The store object that holds fungible assets of a specific type associated with a
 </dd>
 <dt>
 <code>deposit_function: <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a></code>
+</dt>
+<dd>
+
+</dd>
+<dt>
+<code>derived_value_function: <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a></code>
 </dt>
 <dd>
 
@@ -664,7 +671,7 @@ Insufficient balance to withdraw or transfer.
 Trying to re-register dispatch hook on a fungible asset.
 
 
-<pre><code><b>const</b> <a href="fungible_asset.md#0x1_fungible_asset_EALREADY_REGISTERED">EALREADY_REGISTERED</a>: u64 = 26;
+<pre><code><b>const</b> <a href="fungible_asset.md#0x1_fungible_asset_EALREADY_REGISTERED">EALREADY_REGISTERED</a>: u64 = 27;
 </code></pre>
 
 
@@ -749,6 +756,16 @@ Provided deposit function type doesn't meet the signature requirement.
 
 
 
+<a id="0x1_fungible_asset_EDERIVED_VALUE_FUNCTION_SIGNATURE_MISMATCH"></a>
+
+Provided derived_value function type doesn't meet the signature requirement.
+
+
+<pre><code><b>const</b> <a href="fungible_asset.md#0x1_fungible_asset_EDERIVED_VALUE_FUNCTION_SIGNATURE_MISMATCH">EDERIVED_VALUE_FUNCTION_SIGNATURE_MISMATCH</a>: u64 = 25;
+</code></pre>
+
+
+
 <a id="0x1_fungible_asset_EFUNGIBLE_ASSET_AND_STORE_MISMATCH"></a>
 
 Fungible asset and store do not match.
@@ -774,7 +791,7 @@ Fungible asset do not match when merging.
 Invalid withdraw/deposit on dispatchable token.
 
 
-<pre><code><b>const</b> <a href="fungible_asset.md#0x1_fungible_asset_EINVALID_DISPATCHABLE_OPERATIONS">EINVALID_DISPATCHABLE_OPERATIONS</a>: u64 = 25;
+<pre><code><b>const</b> <a href="fungible_asset.md#0x1_fungible_asset_EINVALID_DISPATCHABLE_OPERATIONS">EINVALID_DISPATCHABLE_OPERATIONS</a>: u64 = 26;
 </code></pre>
 
 
@@ -1024,7 +1041,7 @@ if option::some(MAX_U128) is used, it is treated as unlimited supply.
 Create a fungible asset store whose transfer rule would be overloaded by the provided function.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_register_dispatch_functions">register_dispatch_functions</a>(constructor_ref: &<a href="object.md#0x1_object_ConstructorRef">object::ConstructorRef</a>, withdraw_function: <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>, deposit_function: <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_register_dispatch_functions">register_dispatch_functions</a>(constructor_ref: &<a href="object.md#0x1_object_ConstructorRef">object::ConstructorRef</a>, withdraw_function: <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>, deposit_function: <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>, derived_value_function: <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>)
 </code></pre>
 
 
@@ -1037,6 +1054,7 @@ Create a fungible asset store whose transfer rule would be overloaded by the pro
     constructor_ref: &ConstructorRef,
     withdraw_function: FunctionInfo,
     deposit_function: FunctionInfo,
+    derived_value_function: FunctionInfo,
 ) {
     <b>let</b> dispatcher_withdraw_function_info = <a href="function_info.md#0x1_function_info_new_function_info">function_info::new_function_info</a>(
         @aptos_framework,
@@ -1070,6 +1088,22 @@ Create a fungible asset store whose transfer rule would be overloaded by the pro
         )
     );
 
+    <b>let</b> dispatcher_derived_value_function_info = <a href="function_info.md#0x1_function_info_new_function_info">function_info::new_function_info</a>(
+        @aptos_framework,
+        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset">dispatchable_fungible_asset</a>"),
+        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"dispatchable_derived_value"),
+    );
+    // Verify that caller type matches callee type so wrongly typed function cannot be registered.
+    <b>assert</b>!(
+        <a href="function_info.md#0x1_function_info_check_dispatch_type_compatibility">function_info::check_dispatch_type_compatibility</a>(
+            &dispatcher_derived_value_function_info,
+            &derived_value_function
+        ),
+        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(
+            <a href="fungible_asset.md#0x1_fungible_asset_EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH">EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH</a>
+        )
+    );
+
     <b>assert</b>!(
         !<a href="object.md#0x1_object_can_generate_delete_ref">object::can_generate_delete_ref</a>(constructor_ref),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="fungible_asset.md#0x1_fungible_asset_EOBJECT_IS_DELETABLE">EOBJECT_IS_DELETABLE</a>)
@@ -1089,6 +1123,7 @@ Create a fungible asset store whose transfer rule would be overloaded by the pro
         <a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
             withdraw_function,
             deposit_function,
+            derived_value_function,
         }
     );
 }
@@ -1567,6 +1602,32 @@ Return whether a fungible asset type is dispatchable.
     <b>let</b> fa_store = <a href="fungible_asset.md#0x1_fungible_asset_borrow_store_resource">borrow_store_resource</a>(&store);
     <b>let</b> metadata_addr = <a href="object.md#0x1_object_object_address">object::object_address</a>(&fa_store.metadata);
     <b>borrow_global</b>&lt;<a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr).withdraw_function
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_fungible_asset_derived_value_dispatch_function"></a>
+
+## Function `derived_value_dispatch_function`
+
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_derived_value_dispatch_function">derived_value_dispatch_function</a>&lt;T: key&gt;(store: <a href="object.md#0x1_object_Object">object::Object</a>&lt;T&gt;): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_derived_value_dispatch_function">derived_value_dispatch_function</a>&lt;T: key&gt;(store: Object&lt;T&gt;): FunctionInfo <b>acquires</b> <a href="fungible_asset.md#0x1_fungible_asset_FungibleStore">FungibleStore</a>, <a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
+    <b>let</b> fa_store = <a href="fungible_asset.md#0x1_fungible_asset_borrow_store_resource">borrow_store_resource</a>(&store);
+    <b>let</b> metadata_addr = <a href="object.md#0x1_object_object_address">object::object_address</a>(&fa_store.metadata);
+    <b>borrow_global</b>&lt;<a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr).derived_value_function
 }
 </code></pre>
 

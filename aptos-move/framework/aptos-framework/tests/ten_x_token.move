@@ -1,5 +1,5 @@
 #[test_only]
-module aptos_framework::reentrant_token {
+module aptos_framework::ten_x_token {
     use aptos_framework::fungible_asset::{Self, FungibleAsset, TransferRef};
     use aptos_framework::dispatchable_fungible_asset;
     use aptos_framework::object::{ConstructorRef, Object};
@@ -10,19 +10,19 @@ module aptos_framework::reentrant_token {
     public fun initialize(_account: &signer, constructor_ref: &ConstructorRef) {
         let withdraw = function_info::new_function_info(
             @aptos_framework,
-            string::utf8(b"reentrant_token"),
+            string::utf8(b"ten_x_token"),
             string::utf8(b"withdraw"),
         );
 
         let deposit = function_info::new_function_info(
             @aptos_framework,
-            string::utf8(b"reentrant_token"),
+            string::utf8(b"ten_x_token"),
             string::utf8(b"deposit"),
         );
 
         let value = function_info::new_function_info(
             @aptos_framework,
-            string::utf8(b"reentrant_token"),
+            string::utf8(b"ten_x_token"),
             string::utf8(b"derived_value"),
         );
         dispatchable_fungible_asset::register_dispatch_functions(constructor_ref, withdraw, deposit, value);
@@ -40,13 +40,13 @@ module aptos_framework::reentrant_token {
     public fun deposit<T: key>(
         store: Object<T>,
         fa: FungibleAsset,
-        _transfer_ref: &TransferRef,
+        transfer_ref: &TransferRef,
     ) {
-        // Re-entering into dispatchable_fungible_asset. Will be rejected by the MoveVM runtime.
-        dispatchable_fungible_asset::deposit(store, fa);
+        fungible_asset::deposit_with_ref(transfer_ref, store, fa);
     }
 
     public fun derived_value<T: key>(store: Object<T>): u64 {
-        fungible_asset::balance(store)
+        // Derived value is always 10x!
+        fungible_asset::balance(store) * 10
     }
 }

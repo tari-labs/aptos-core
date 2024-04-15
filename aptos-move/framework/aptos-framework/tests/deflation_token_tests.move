@@ -42,6 +42,10 @@ module aptos_framework::deflation_token_tests {
         dispatchable_fungible_asset::transfer_fixed_receive(creator, creator_store, aaron_store, 10);
         assert!(fungible_asset::balance(aaron_store) == 25, 5);
         assert!(fungible_asset::balance(creator_store) == 73, 5);
+
+        // Derived value should be the same as balance.
+        assert!(dispatchable_fungible_asset::derived_value(aaron_store) == 25, 5);
+        assert!(dispatchable_fungible_asset::derived_value(creator_store) == 73, 5);
     }
 
     #[test(creator = @0xcafe, aaron = @0xface)]
@@ -75,7 +79,7 @@ module aptos_framework::deflation_token_tests {
     }
 
     #[test(creator = @0xcafe)]
-    #[expected_failure(abort_code = 0x10019, location = aptos_framework::fungible_asset)]
+    #[expected_failure(abort_code = 0x1001A, location = aptos_framework::fungible_asset)]
     fun test_deflation_fa_deposit(
         creator: &signer,
     ) {
@@ -96,7 +100,7 @@ module aptos_framework::deflation_token_tests {
     }
 
     #[test(creator = @0xcafe, aaron = @0xface)]
-    #[expected_failure(abort_code = 0x10019, location = aptos_framework::fungible_asset)]
+    #[expected_failure(abort_code = 0x1001A, location = aptos_framework::fungible_asset)]
     fun test_deflation_fa_withdraw(
         creator: &signer,
         aaron: &signer,
@@ -123,7 +127,7 @@ module aptos_framework::deflation_token_tests {
     }
 
     #[test(creator = @0xcafe, aaron = @0xface)]
-    #[expected_failure(abort_code = 0x8001A, location = aptos_framework::fungible_asset)]
+    #[expected_failure(abort_code = 0x8001B, location = aptos_framework::fungible_asset)]
     fun test_double_init(
         creator: &signer,
     ) {
@@ -143,8 +147,14 @@ module aptos_framework::deflation_token_tests {
             string::utf8(b"deposit"),
         );
 
+        let value = function_info::new_function_info(
+            @aptos_framework,
+            string::utf8(b"deflation_token"),
+            string::utf8(b"derived_value"),
+        );
+
         // Re-registering the overload function should yield an error
-        dispatchable_fungible_asset::register_dispatch_functions(&creator_ref, withdraw, deposit);
+        dispatchable_fungible_asset::register_dispatch_functions(&creator_ref, withdraw, deposit, value);
     }
 
     #[test(creator = @0xcafe)]
@@ -160,8 +170,14 @@ module aptos_framework::deflation_token_tests {
             string::utf8(b"deposit"),
         );
 
+        let value = function_info::new_function_info(
+            @aptos_framework,
+            string::utf8(b"deflation_token"),
+            string::utf8(b"derived_value"),
+        );
+
         // Change the deposit and withdraw function. Should give a type mismatch error.
-        dispatchable_fungible_asset::register_dispatch_functions(&creator_ref, deposit, deposit);
+        dispatchable_fungible_asset::register_dispatch_functions(&creator_ref, deposit, deposit, value);
     }
 
     #[test(creator = @0xcafe)]
@@ -178,7 +194,30 @@ module aptos_framework::deflation_token_tests {
         );
 
         // Change the deposit and withdraw function. Should give a type mismatch error.
-        dispatchable_fungible_asset::register_dispatch_functions(&creator_ref, withdraw, withdraw);
+        dispatchable_fungible_asset::register_dispatch_functions(&creator_ref, withdraw, withdraw, withdraw);
+    }
+
+    #[test(creator = @0xcafe)]
+    #[expected_failure(abort_code = 0x10018, location = aptos_framework::fungible_asset)]
+    fun test_register_bad_value(
+        creator: &signer,
+    ) {
+        let (creator_ref, _) = fungible_asset::create_test_token(creator);
+
+        let withdraw = function_info::new_function_info(
+            @aptos_framework,
+            string::utf8(b"deflation_token"),
+            string::utf8(b"withdraw"),
+        );
+
+        let deposit = function_info::new_function_info(
+            @aptos_framework,
+            string::utf8(b"deflation_token"),
+            string::utf8(b"deposit"),
+        );
+
+        // Change the deposit and withdraw function. Should give a type mismatch error.
+        dispatchable_fungible_asset::register_dispatch_functions(&creator_ref, withdraw, deposit, deposit);
     }
 
     #[test(creator = @0xcafe)]

@@ -63,10 +63,12 @@ module aptos_framework::fungible_asset {
     const EWITHDRAW_FUNCTION_SIGNATURE_MISMATCH: u64 = 23;
     /// Provided deposit function type doesn't meet the signature requirement.
     const EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH: u64 = 24;
+    /// Provided derived_value function type doesn't meet the signature requirement.
+    const EDERIVED_VALUE_FUNCTION_SIGNATURE_MISMATCH: u64 = 25;
     /// Invalid withdraw/deposit on dispatchable token.
-    const EINVALID_DISPATCHABLE_OPERATIONS: u64 = 25;
+    const EINVALID_DISPATCHABLE_OPERATIONS: u64 = 26;
     /// Trying to re-register dispatch hook on a fungible asset.
-    const EALREADY_REGISTERED: u64 = 26;
+    const EALREADY_REGISTERED: u64 = 27;
 
     //
     // Constants
@@ -126,6 +128,7 @@ module aptos_framework::fungible_asset {
     struct DispatchFunctionStore has key {
 		withdraw_function: FunctionInfo,
 		deposit_function: FunctionInfo,
+        derived_value_function: FunctionInfo,
     }
 
     /// FungibleAsset can be passed into function for type safety and to guarantee a specific amount.
@@ -229,6 +232,7 @@ module aptos_framework::fungible_asset {
         constructor_ref: &ConstructorRef,
         withdraw_function: FunctionInfo,
         deposit_function: FunctionInfo,
+        derived_value_function: FunctionInfo,
     ) {
         let dispatcher_withdraw_function_info = function_info::new_function_info(
             @aptos_framework,
@@ -262,6 +266,22 @@ module aptos_framework::fungible_asset {
             )
         );
 
+        let dispatcher_derived_value_function_info = function_info::new_function_info(
+            @aptos_framework,
+            string::utf8(b"dispatchable_fungible_asset"),
+            string::utf8(b"dispatchable_derived_value"),
+        );
+        // Verify that caller type matches callee type so wrongly typed function cannot be registered.
+        assert!(
+            function_info::check_dispatch_type_compatibility(
+                &dispatcher_derived_value_function_info,
+                &derived_value_function
+            ),
+            error::invalid_argument(
+                EDEPOSIT_FUNCTION_SIGNATURE_MISMATCH
+            )
+        );
+
         assert!(
             !object::can_generate_delete_ref(constructor_ref),
             error::invalid_argument(EOBJECT_IS_DELETABLE)
@@ -281,6 +301,7 @@ module aptos_framework::fungible_asset {
             DispatchFunctionStore {
                 withdraw_function,
                 deposit_function,
+                derived_value_function,
             }
         );
     }
@@ -419,6 +440,12 @@ module aptos_framework::fungible_asset {
         let fa_store = borrow_store_resource(&store);
         let metadata_addr = object::object_address(&fa_store.metadata);
         borrow_global<DispatchFunctionStore>(metadata_addr).withdraw_function
+    }
+
+    public(friend) fun derived_value_dispatch_function<T: key>(store: Object<T>): FunctionInfo acquires FungibleStore, DispatchFunctionStore {
+        let fa_store = borrow_store_resource(&store);
+        let metadata_addr = object::object_address(&fa_store.metadata);
+        borrow_global<DispatchFunctionStore>(metadata_addr).derived_value_function
     }
 
     public fun asset_metadata(fa: &FungibleAsset): Object<Metadata> {

@@ -36,11 +36,13 @@ module aptos_framework::dispatchable_fungible_asset {
         constructor_ref: &ConstructorRef,
         withdraw_function: FunctionInfo,
         deposit_function: FunctionInfo,
+        derived_value_function: FunctionInfo,
     ) {
         fungible_asset::register_dispatch_functions(
             constructor_ref,
             withdraw_function,
-            deposit_function
+            deposit_function,
+            derived_value_function,
         );
         let store_obj = &object::generate_signer(constructor_ref);
         move_to<TransferRefStore>(
@@ -95,6 +97,24 @@ module aptos_framework::dispatchable_fungible_asset {
             )
         } else {
             fungible_asset::deposit(store, fa)
+        }
+    }
+
+    #[view]
+    /// Get the derived value of store using the overloaded hook.
+    ///
+    /// The semantics of value will be governed by the function specified in DispatchFunctionStore.
+    public fun derived_value<T: key>(store: Object<T>): u64 {
+        if (fungible_asset::is_dispatchable(store)) {
+            assert!(
+                features::dispatchable_fungible_asset_enabled(),
+                error::aborted(ENOT_ACTIVATED)
+            );
+            let func = fungible_asset::derived_value_dispatch_function(store);
+            function_info::load_function(&func);
+            dispatchable_derived_value(store, &func)
+        } else {
+            fungible_asset::balance(store)
         }
     }
 
@@ -154,4 +174,9 @@ module aptos_framework::dispatchable_fungible_asset {
         transfer_ref: &TransferRef,
         function: &FunctionInfo,
     );
+
+    native fun dispatchable_derived_value<T: key>(
+        store: Object<T>,
+        function: &FunctionInfo,
+    ): u64;
 }

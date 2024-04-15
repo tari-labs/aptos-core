@@ -31,7 +31,13 @@ module aptos_framework::permissioned_token {
             string::utf8(b"permissioned_token"),
             string::utf8(b"deposit"),
         );
-        dispatchable_fungible_asset::register_dispatch_functions(constructor_ref, withdraw, deposit);
+
+        let value = function_info::new_function_info(
+            @aptos_framework,
+            string::utf8(b"permissioned_token"),
+            string::utf8(b"derived_value"),
+        );
+        dispatchable_fungible_asset::register_dispatch_functions(constructor_ref, withdraw, deposit, value);
     }
 
     public fun add_to_allow_list(account: &signer, new_address: address) acquires AllowlistStore {
@@ -62,5 +68,9 @@ module aptos_framework::permissioned_token {
         transfer_ref: &TransferRef,
     ) {
         fungible_asset::deposit_with_ref(transfer_ref, store, fa);
+    }
+
+    public fun derived_value<T: key>(store: Object<T>): u64 {
+        fungible_asset::balance(store)
     }
 }
