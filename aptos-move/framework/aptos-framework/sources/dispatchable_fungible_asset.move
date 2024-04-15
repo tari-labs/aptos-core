@@ -27,6 +27,7 @@ module aptos_framework::dispatchable_fungible_asset {
     /// Feature is not activated yet on the network.
     const ENOT_ACTIVATED: u64 = 3;
 
+    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
     struct TransferRefStore has key {
         transfer_ref: TransferRef
     }
@@ -110,15 +111,16 @@ module aptos_framework::dispatchable_fungible_asset {
 
     /// A transfer with a fixed amount debited from the sender
     public fun transfer_fixed_send<T: key>(
-        _sender: &signer,
+        sender: &signer,
         from: Object<T>,
         to: Object<T>,
         send_amount: u64,
     ) acquires TransferRefStore {
-        let fa = fungible_asset::withdraw_with_ref(
-            borrow_transfer_ref(from),
-            from,
-            send_amount
+        let balance_before = fungible_asset::balance(from);
+        let fa = withdraw(sender, from, send_amount);
+        assert!(
+            balance_before == fungible_asset::balance(from) + send_amount,
+            error::aborted(EAMOUNT_MISMATCH)
         );
         deposit(to, fa);
     }
@@ -131,7 +133,12 @@ module aptos_framework::dispatchable_fungible_asset {
         receive_amount: u64,
     ) acquires TransferRefStore {
         let fa = withdraw(sender, from, receive_amount);
-        fungible_asset::deposit_with_ref(borrow_transfer_ref(from), to, fa);
+        let balance_before = fungible_asset::balance(to);
+        deposit(to, fa);
+        assert!(
+            balance_before + receive_amount == fungible_asset::balance(to),
+            error::aborted(EAMOUNT_MISMATCH)
+        );
     }
 
     native fun dispatchable_withdraw<T: key>(

@@ -38,13 +38,40 @@ module aptos_framework::deflation_token_tests {
         assert!(fungible_asset::supply(metadata) == option::some(99), 3);
         dispatchable_fungible_asset::deposit(aaron_store, fa);
 
-        dispatchable_fungible_asset::transfer_fixed_send(creator, creator_store, aaron_store, 10);
-        assert!(fungible_asset::balance(aaron_store) == 25, 5);
-        assert!(fungible_asset::balance(creator_store) == 74, 5);
-
+        // Fix receive API will work because the tax is asserted on the caller side.
         dispatchable_fungible_asset::transfer_fixed_receive(creator, creator_store, aaron_store, 10);
-        assert!(fungible_asset::balance(aaron_store) == 35, 5);
-        assert!(fungible_asset::balance(creator_store) == 63, 5);
+        assert!(fungible_asset::balance(aaron_store) == 25, 5);
+        assert!(fungible_asset::balance(creator_store) == 73, 5);
+    }
+
+    #[test(creator = @0xcafe, aaron = @0xface)]
+    #[expected_failure(abort_code = 0x70002, location = aptos_framework::dispatchable_fungible_asset)]
+    fun test_deflation_failed_fixed_send(
+        creator: &signer,
+        aaron: &signer,
+    ) {
+        let (creator_ref, token_object) = fungible_asset::create_test_token(creator);
+        let (mint, _, _) = fungible_asset::init_test_metadata(&creator_ref);
+        let metadata = object::convert<TestToken, Metadata>(token_object);
+
+        let creator_store = fungible_asset::create_test_store(creator, metadata);
+        let aaron_store = fungible_asset::create_test_store(aaron, metadata);
+
+        deflation_token::initialize(creator, &creator_ref);
+
+        assert!(fungible_asset::supply(metadata) == option::some(0), 1);
+        // Mint
+        let fa = fungible_asset::mint(&mint, 100);
+        assert!(fungible_asset::supply(metadata) == option::some(100), 2);
+        // Deposit
+        dispatchable_fungible_asset::deposit(creator_store, fa);
+        // Withdraw
+        let fa = dispatchable_fungible_asset::withdraw(creator, creator_store, 5);
+        assert!(fungible_asset::supply(metadata) == option::some(100), 3);
+        dispatchable_fungible_asset::deposit(aaron_store, fa);
+
+        // Fix send API will fail because the sender balance is not as expected
+        dispatchable_fungible_asset::transfer_fixed_send(creator, creator_store, aaron_store, 10);
     }
 
     #[test(creator = @0xcafe)]
