@@ -198,7 +198,7 @@ impl traits::Transcript for Transcript {
             pp,
             eks,
             &DAS_WEIGHTED_PVSS_FIAT_SHAMIR_DST[..],
-            2 + W * 3,
+            2 + W * 3, // 3W+1 for encryption check, 1 for SoK verification.
         );
 
         let sok_vrfy_challenge = &extra[W * 3 + 1];
