@@ -190,6 +190,7 @@ impl traits::Transcript for Transcript {
         if eks.len() != n {
             bail!("Expected {} encryption keys, but got {}", n, eks.len());
         }
+        let W = sc.get_total_weight();
 
         // Derive challenges deterministically via Fiat-Shamir; easier to debug for distributed systems
         let (f, extra) = fiat_shamir::fiat_shamir(
@@ -198,19 +199,19 @@ impl traits::Transcript for Transcript {
             pp,
             eks,
             &DAS_WEIGHTED_PVSS_FIAT_SHAMIR_DST[..],
-            2,
+            2 + W * 3,
         );
 
+        let sok_vrfy_challenge = &extra[W * 3 + 1];
         let g_2 = pp.get_commitment_base();
         let g_1 = pp.get_encryption_public_params().pubkey_base();
-        let W = sc.get_total_weight();
         batch_verify_soks::<G1Projective, A>(
             self.soks.as_slice(),
             g_1,
             &self.V[W],
             spks,
             aux,
-            &extra[0],
+            sok_vrfy_challenge,
         )?;
 
         let ldt = LowDegreeTest::new(
@@ -226,8 +227,7 @@ impl traits::Transcript for Transcript {
         // Correctness of encryptions check
         //
 
-        // TODO: 128-bit scalars from Merlin transcript
-        let alphas_betas_and_gammas = random_scalars(3 * W + 1, &mut thread_rng());
+        let alphas_betas_and_gammas = &extra[0..W * 3 + 1];
         let (alphas_and_betas, gammas) = alphas_betas_and_gammas.split_at(2 * W + 1);
         let (alphas, betas) = alphas_and_betas.split_at(W + 1);
         assert_eq!(alphas.len(), W + 1);
