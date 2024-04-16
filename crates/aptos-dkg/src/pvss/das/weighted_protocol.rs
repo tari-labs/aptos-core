@@ -24,7 +24,6 @@ use aptos_crypto::{bls12381, CryptoMaterialError, Genesis, SigningKey, ValidCryp
 use aptos_crypto_derive::{BCSCryptoHash, CryptoHasher};
 use blstrs::{pairing, G1Affine, G1Projective, G2Affine, G2Projective, Gt};
 use group::{Curve, Group};
-use rand::thread_rng;
 use serde::{Deserialize, Serialize};
 use std::ops::{Add, Mul, Neg, Sub};
 
