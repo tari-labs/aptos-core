@@ -44,8 +44,8 @@ module aptos_framework::deflation_token_tests {
         assert!(fungible_asset::balance(creator_store) == 73, 5);
 
         // Derived value should be the same as balance.
-        assert!(dispatchable_fungible_asset::derived_value(aaron_store) == 25, 5);
-        assert!(dispatchable_fungible_asset::derived_value(creator_store) == 73, 5);
+        assert!(dispatchable_fungible_asset::derived_balance(aaron_store) == 25, 5);
+        assert!(dispatchable_fungible_asset::derived_balance(creator_store) == 73, 5);
     }
 
     #[test(creator = @0xcafe, aaron = @0xface)]
@@ -150,7 +150,7 @@ module aptos_framework::deflation_token_tests {
         let value = function_info::new_function_info(
             @aptos_framework,
             string::utf8(b"deflation_token"),
-            string::utf8(b"derived_value"),
+            string::utf8(b"derived_balance"),
         );
 
         // Re-registering the overload function should yield an error
@@ -173,7 +173,7 @@ module aptos_framework::deflation_token_tests {
         let value = function_info::new_function_info(
             @aptos_framework,
             string::utf8(b"deflation_token"),
-            string::utf8(b"derived_value"),
+            string::utf8(b"derived_balance"),
         );
 
         // Change the deposit and withdraw function. Should give a type mismatch error.
@@ -198,7 +198,7 @@ module aptos_framework::deflation_token_tests {
     }
 
     #[test(creator = @0xcafe)]
-    #[expected_failure(abort_code = 0x10018, location = aptos_framework::fungible_asset)]
+    #[expected_failure(abort_code = 0x10019, location = aptos_framework::fungible_asset)]
     fun test_register_bad_value(
         creator: &signer,
     ) {

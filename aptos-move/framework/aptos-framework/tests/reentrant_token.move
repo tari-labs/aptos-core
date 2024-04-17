@@ -23,7 +23,7 @@ module aptos_framework::reentrant_token {
         let value = function_info::new_function_info(
             @aptos_framework,
             string::utf8(b"reentrant_token"),
-            string::utf8(b"derived_value"),
+            string::utf8(b"derived_balance"),
         );
         dispatchable_fungible_asset::register_dispatch_functions(constructor_ref, withdraw, deposit, value);
     }
@@ -46,7 +46,7 @@ module aptos_framework::reentrant_token {
         dispatchable_fungible_asset::deposit(store, fa);
     }
 
-    public fun derived_value<T: key>(store: Object<T>): u64 {
+    public fun derived_balance<T: key>(store: Object<T>): u64 {
         fungible_asset::balance(store)
     }
 }

@@ -66,6 +66,16 @@ module aptos_framework::function_info {
         check_dispatch_type_compatibility_impl(framework_function, dispatch_target)
     }
 
+    /// Load up a function into VM's loader and charge for its dependencies
+    ///
+    /// It is **critical** to make sure that this function is invoked before `check_dispatch_type_compatibility`
+    /// or performing any other dispatching logic to ensure:
+    /// 1. We properly charge gas for the function to dispatch.
+    /// 2. The function is loaded in the cache so that we can perform further type checking/dispatching logic.
+    ///
+    /// Calling `check_dispatch_type_compatibility_impl` or dispatch without loading up the module could result in
+    /// non-determinism on chain because the execution would be dependent on whether the target module is in the
+    /// cache or not, which could vary depending on the workload distribution over threads.
     public(friend) fun load_function(f: &FunctionInfo) {
         load_function_impl(f)
     }

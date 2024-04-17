@@ -26,6 +26,6 @@ module aptos_framework::ten_x_token_tests {
         dispatchable_fungible_asset::deposit(creator_store, fa);
 
         // The derived value is 10x
-        assert!(dispatchable_fungible_asset::derived_value(creator_store) == 1000, 5);
+        assert!(dispatchable_fungible_asset::derived_balance(creator_store) == 1000, 5);
     }
 }

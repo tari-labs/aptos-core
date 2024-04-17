@@ -67,7 +67,7 @@ pub(crate) struct Interpreter {
     /// The access control state.
     access_control: AccessControlState,
     /// Set of modules that exists on call stack.
-    executed_modules: HashSet<ModuleId>,
+    active_modules: HashSet<ModuleId>,
 }
 
 struct TypeWithLoader<'a, 'b> {
@@ -100,7 +100,7 @@ impl Interpreter {
             call_stack: CallStack::new(),
             paranoid_type_checks: loader.vm_config().paranoid_type_checks,
             access_control: AccessControlState::default(),
-            executed_modules: HashSet::new(),
+            active_modules: HashSet::new(),
         }
         .execute_main(
             loader,
@@ -147,7 +147,7 @@ impl Interpreter {
         }
 
         if let Some(module_id) = function.module_id() {
-            self.executed_modules.insert(module_id.clone());
+            self.active_modules.insert(module_id.clone());
         }
 
         let mut current_frame = self
@@ -184,7 +184,7 @@ impl Interpreter {
                     if let Some(frame) = self.call_stack.pop() {
                         if frame.function.module_id() != current_frame.function.module_id() {
                             if let Some(module_id) = current_frame.function.module_id() {
-                                self.executed_modules.remove(module_id);
+                                self.active_modules.remove(module_id);
                             }
                         }
                         // Note: the caller will find the callee's return values at the top of the shared operand stack
@@ -332,7 +332,7 @@ impl Interpreter {
     ) -> PartialVMResult<()> {
         if let Some(module_id) = func.module_id() {
             if let Some(current_module_id) = current_frame.function.module_id() {
-                if module_id != current_module_id && self.executed_modules.contains(module_id) {
+                if module_id != current_module_id && self.active_modules.contains(module_id) {
                     return Err(PartialVMError::new(StatusCode::RUNTIME_DISPATCH_ERROR)
                         .with_message(format!(
                             "Re-entrancy detected: {} already exists on top of the stack",
@@ -340,7 +340,7 @@ impl Interpreter {
                         )));
                 }
             }
-            self.executed_modules.insert(module_id.clone());
+            self.active_modules.insert(module_id.clone());
         }
         let mut frame = self.make_call_frame(gas_meter, loader, module_store, func, ty_args)?;
 
