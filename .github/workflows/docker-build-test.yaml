@@ -23,7 +23,8 @@ name: "Build+Test Docker Images"
 on: # build on main branch OR when a PR is labeled with `CICD:build-images`
   # Allow us to run this specific workflow without a PR
   workflow_dispatch:
-  pull_request_target:
+  # pull_request_target: TODO: undo before landing!!
+  pull_request:
     types: [labeled, opened, synchronize, reopened, auto_merge_enabled]
   push:
     branches:
@@ -124,6 +125,18 @@ jobs:
       - name: Run the file change determinator
         id: determine_file_changes
         uses: ./.github/actions/file-change-determinator
+
+  # This job determines if the framework upgrade test should be run
+  framework-upgrade-determinator:
+    needs: [permission-check]
+    runs-on: ubuntu-latest
+    outputs:
+      run_framework_upgrade_test: ${{ steps.determine_framework_upgrade_test.outputs.run_framework_upgrade_test }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run the framework upgrade test determinator
+        id: determine_framework_upgrade_test
+        uses: ./.github/actions/framework-upgrade-determinator
 
   # This is a PR required job.
   rust-images:
@@ -316,11 +329,13 @@ jobs:
       - rust-images-performance
       - rust-images-consensus-only-perf-test
       - file_change_determinator
+      - framework-upgrade-determinator
     if: |
       !failure() && !cancelled() && needs.permission-check.result == 'success' && (
         (github.event_name == 'push' && github.ref_name != 'main') ||
         github.event_name == 'workflow_dispatch' ||
-        contains(github.event.pull_request.labels.*.name, 'CICD:run-framework-upgrade-test')
+        contains(github.event.pull_request.labels.*.name, 'CICD:run-framework-upgrade-test') ||
+        github.event.pull_request.auto_merge != null
       )
     uses: aptos-labs/aptos-core/.github/workflows/workflow-run-forge.yaml@main
     secrets: inherit
@@ -331,7 +346,7 @@ jobs:
       FORGE_RUNNER_DURATION_SECS: 3600
       COMMENT_HEADER: forge-framework-upgrade
       FORGE_NAMESPACE: forge-framework-upgrade-${{ needs.determine-docker-build-metadata.outputs.targetCacheId }}
-      SKIP_JOB: ${{ needs.file_change_determinator.outputs.only_docs_changed == 'true' }}
+      SKIP_JOB: ${{ needs.file_change_determinator.outputs.only_docs_changed == 'true' || needs.framework-upgrade-determinator.outputs.run_framework_upgrade_test == 'false' }}
 
   forge-consensus-only-perf-test:
     needs:
