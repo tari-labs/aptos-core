@@ -8,13 +8,17 @@ use crate::{file_format_generator::module_generator::ModuleContext, options::Opt
 use module_generator::ModuleGenerator;
 use move_binary_format::{file_format as FF, internals::ModuleIndex};
 use move_command_line_common::{address::NumericalAddress, parser::NumberFormat};
-use move_compiler::compiled_unit as CU;
-use move_model::model::GlobalEnv;
+use move_compiler::{
+    compiled_unit as CU,
+    compiled_unit::{CompiledUnit, NamedCompiledScript},
+};
+use move_model::{ast::ModuleName, model::GlobalEnv};
 use move_stackless_bytecode::function_target_pipeline::FunctionTargetsHolder;
 use move_symbol_pool::Symbol;
+use std::collections::BTreeMap;
 
 pub fn generate_file_format(
-    env: &GlobalEnv,
+    env: &mut GlobalEnv,
     targets: &FunctionTargetsHolder,
 ) -> Vec<CU::CompiledUnit> {
     let ctx = ModuleContext { env, targets };
@@ -23,12 +27,16 @@ pub fn generate_file_format(
         .get_extension::<Options>()
         .expect("Options is available");
     let compile_test_code = options.compile_test_code;
+    let mut module_data = BTreeMap::new();
     for module_env in ctx.env.get_modules() {
         if !module_env.is_target() {
             continue;
         }
         assert!(compile_test_code || !module_env.is_test_only());
         let (ff_module, source_map, main_handle) = ModuleGenerator::run(&ctx, &module_env);
+        if !module_env.is_script_module() {
+            module_data.insert(module_env.get_id(), (ff_module.clone(), source_map.clone()));
+        }
         if module_env.is_script_module() {
             let FF::CompiledModule {
                 version,
@@ -90,6 +98,37 @@ pub fn generate_file_format(
                 module: ff_module,
                 source_map,
             }));
+        }
+    }
+    for (id, (m, map)) in module_data {
+        env.attach_compiled_module(id, m, map)
+    }
+    let mut script_index = 0;
+    for unit in result.iter() {
+        if let CompiledUnit::Script(NamedCompiledScript {
+            package_name: _,
+            name: _,
+            script,
+            source_map,
+        }) = unit
+        {
+            let name = ModuleName::pseudo_script_name(env.symbol_pool(), script_index);
+            script_index += 1;
+            let module = move_model::script_into_module(
+                script.clone(),
+                &name.name().display(env.symbol_pool()).to_string(),
+            );
+            if let Some(id) = env.find_module(&name).map(|m| m.get_id()) {
+                env.attach_compiled_module(id, module, source_map.clone())
+            } else {
+                env.error(
+                    &env.unknown_loc(),
+                    &format!(
+                        "failed to attach bytecode: cannot find script `{}`",
+                        name.display_full(env)
+                    ),
+                );
+            }
         }
     }
     result
