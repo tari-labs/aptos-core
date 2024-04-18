@@ -12,25 +12,77 @@
 //! that they want.
 //!
 //! In language version 2.0 and above, we will allow sequences within binary
-//! operations, but the evaluation order will be left-to-right, following
-//! the evaluation order semantics used in function calls.
+//! operations, but the evaluation order will be consistently left-to-right,
+//! following the evaluation order semantics used in normal function calls.
 //!
-//! As an example, consider the following move code, where `add` is a
-//! user-defined function that takes two arguments and returns their sum:
+//! Consider the following examples to see some samples of evaluation order used
+//! by compiler v1 in the presence of sequences within the context of binary
+//! operations. They are meant to showcase how concisely describing the v1 ordering
+//! is hard (as opposed to, a left-to-right evaluation ordering everywhere).
+//!
+//! We number the sub-expressions in their order of their evaluation.
+//! Some (sub-)expressions are left un-numbered if they are irrelevant to the
+//! understanding of the evaluation order.
+//!
+//! case 1: `add` is a user-defined function.
 //! ```move
 //! let x = 1;
 //! add({x = x - 1; x + 8}, {x = x + 3; x - 3}) + {x = x * 2; x * 2}
+//!      ^^^^^^^^^  ^^^^^    ^^^^^^^^^  ^^^^^      ^^^^^^^^^  ^^^^^
+//!         |        |         |          |            |        |
+//!         |        |         |          |            |        |
+//!         1        |         |          |            |        |
+//!                  2         |          |            |        |
+//!                            3          |            |        |
+//!                                       |            4        |
+//!                                       5                     |
+//!                                                             6
 //! ```
-//! In v1, the code above is translated into the following code, which is not
-//! easily explainable or understood:
-//! ```ir
+//!
+//! case 2:
+//! ```move
+//! fun aborter(x: u64): u64 {
+//!     abort x
+//! }
+//!
+//! public fun test(): u64 {
+//!     let x = 1;
+//!     aborter(x) + {x = x + 1; aborter(x + 100); x} + x
+//!     ^^^^^^^^^^    ^^^^^^^^^  ^^^^^^^^^^^^^^^^
+//!        |              |              |
+//!        |              1              |
+//!        |                             2
+//!     never evaluated
+//! }
+//! ```
+//!
+//! case 3:
+//! ```move
+//! (abort 0) + {(abort 14); 0} + 0
+//!  ^^^^^^^      ^^^^^^^^
+//!     |              |
+//!     1              |
+//!                 never evaluated
+//! ```
+//!
+//! case 4:
+//! ```move
+//! {250u8 + 50u8} + {abort 55; 5u8}
+//!  ^^^^^^^^^^^^     ^^^^^^^^
+//!      |               |
+//!      |               1
+//!   never evaluated
+//! ```
+//!
+//! case 5:
+//! ```move
 //! let x = 1;
-//! x = x - 1;
-//! let temp1 = x + 8; // needed to get left-to-right evaluation order
-//! x = x + 3;
-//! x = x * 2; // note that we do not save `x - 3` in a temp,
-//!            // so we won't get left-to-right evaluation order
-//! add(temp1, x - 3) + x * 2
+//! x + {x = x + 1; x} + {x = x + 1; x}
+//! ^    ^^^^^^^^^  ^     ^^^^^^^^^  ^
+//! |       |       |        |       |
+//! |       1       |        |       |
+//! |               |        2       |
+//! 3               3                3
 //! ```
 
 use codespan_reporting::diagnostic::Severity;
