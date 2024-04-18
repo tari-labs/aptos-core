@@ -19,4 +19,3 @@ module 0xc0ffee::m {
 //# run 0xc0ffee::m::test1
 
 //# run 0xc0ffee::m::test2
-
