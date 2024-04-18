@@ -17,6 +17,7 @@ pub mod options;
 pub mod pipeline;
 pub mod plan_builder;
 pub mod recursive_struct_checker;
+pub mod seqs_in_binop_checker;
 pub mod unused_params_checker;
 
 use crate::{
@@ -55,6 +56,7 @@ use move_ir_types::location;
 use move_model::{
     add_move_lang_diagnostics,
     ast::{Address, ModuleName},
+    metadata::LanguageVersion,
     model::GlobalEnv,
     PackageInfo,
 };
@@ -363,6 +365,15 @@ pub fn check_and_rewrite_pipeline<'a, 'b>(
     if !for_v1_model && options.experiment_on(Experiment::ACQUIRES_CHECK) {
         env_pipeline.add("acquires check", |env| {
             acquires_checker::acquires_checker(env)
+        });
+    }
+
+    let check_seqs_in_binops = options.language_version.unwrap_or_default() < LanguageVersion::V2_0
+        && options.experiment_on(Experiment::SEQS_IN_BINOPS_CHECK);
+
+    if !for_v1_model && check_seqs_in_binops {
+        env_pipeline.add("binop side effect check", |env| {
+            seqs_in_binop_checker::checker(env)
         });
     }
 

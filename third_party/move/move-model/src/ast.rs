@@ -2332,15 +2332,16 @@ impl Operation {
         use Operation::*;
         matches!(
             self,
-            Tuple
-                | Index
-                | Slice
-                | Range
-                | Implies
-                | Iff
-                | Identical
-                | Add
-                | Sub
+            Tuple | Index | Slice | Range | Implies | Iff | Identical | Not | Cast | Len | Vector
+        ) || self.is_binop()
+    }
+
+    /// Determines whether this is a binary operator
+    pub fn is_binop(&self) -> bool {
+        use Operation::*;
+        matches!(
+            self,
+            Add | Sub
                 | Mul
                 | Mod
                 | Div
@@ -2357,10 +2358,6 @@ impl Operation {
                 | Gt
                 | Le
                 | Ge
-                | Not
-                | Cast
-                | Len
-                | Vector
         )
     }
 
@@ -2476,6 +2473,33 @@ impl Operation {
     /// currently to equality which can be used on `(T, T)`, `(T, &T)`, etc.
     pub fn allows_ref_param_for_value(&self) -> bool {
         matches!(self, Operation::Eq | Operation::Neq)
+    }
+
+    /// Get the string representation, if this is a binary operator.
+    /// Returns `None` for non-binary operators.
+    pub fn to_string_if_binop(&self) -> Option<String> {
+        use Operation::*;
+        match self {
+            Add => Some("+".to_owned()),
+            Sub => Some("-".to_owned()),
+            Mul => Some("*".to_owned()),
+            Mod => Some("%".to_owned()),
+            Div => Some("/".to_owned()),
+            BitOr => Some("|".to_owned()),
+            BitAnd => Some("&".to_owned()),
+            Xor => Some("^".to_owned()),
+            Shl => Some("<<".to_owned()),
+            Shr => Some(">>".to_owned()),
+            And => Some("&&".to_owned()),
+            Or => Some("||".to_owned()),
+            Eq => Some("==".to_owned()),
+            Neq => Some("!=".to_owned()),
+            Lt => Some("<".to_owned()),
+            Gt => Some(">".to_owned()),
+            Le => Some("<=".to_owned()),
+            Ge => Some(">=".to_owned()),
+            _ => None,
+        }
     }
 }
 
