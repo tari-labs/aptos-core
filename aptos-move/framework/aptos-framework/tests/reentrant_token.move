@@ -1,5 +1,5 @@
 #[test_only]
-module aptos_framework::reentrant_token {
+module 0xcafe::reentrant_token {
     use aptos_framework::fungible_asset::{Self, FungibleAsset, TransferRef};
     use aptos_framework::dispatchable_fungible_asset;
     use aptos_framework::object::{ConstructorRef, Object};
@@ -9,19 +9,19 @@ module aptos_framework::reentrant_token {
 
     public fun initialize(_account: &signer, constructor_ref: &ConstructorRef) {
         let withdraw = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"reentrant_token"),
             string::utf8(b"withdraw"),
         );
 
         let deposit = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"reentrant_token"),
             string::utf8(b"deposit"),
         );
 
         let value = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"reentrant_token"),
             string::utf8(b"derived_balance"),
         );

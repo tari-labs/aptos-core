@@ -518,6 +518,7 @@ impl Interpreter {
             resolver,
             extensions,
             gas_meter.balance_internal(),
+            traversal_context,
         );
         let native_function = function.get_native()?;
 
@@ -591,9 +592,22 @@ impl Interpreter {
                 args,
             } => {
                 gas_meter.charge_native_function(cost, Option::<std::iter::Empty<&Value>>::None)?;
-                let func = resolver.function_from_name(&module_name, &func_name)?;
+                let target_func = resolver.function_from_name(&module_name, &func_name)?;
 
-                if func.is_friend_or_private() {
+                if target_func.is_friend_or_private()
+                    || target_func.module_id() == function.module_id()
+                {
+                    return Err(PartialVMError::new(StatusCode::RUNTIME_DISPATCH_ERROR)
+                        .with_message(
+                            "Invoking private or friend function during dispatch".to_string(),
+                        ));
+                }
+
+                if function.type_parameters != target_func.type_parameters
+                    || function.return_types != target_func.return_types
+                    || function.parameter_types[0..function.parameter_types.len() - 1]
+                        != target_func.parameter_types
+                {
                     return Err(PartialVMError::new(StatusCode::RUNTIME_DISPATCH_ERROR)
                         .with_message(
                             "Invoking private or friend function during dispatch".to_string(),
@@ -623,7 +637,7 @@ impl Interpreter {
                     gas_meter,
                     resolver.loader(),
                     module_store,
-                    func,
+                    target_func,
                     ty_args,
                 )
             },

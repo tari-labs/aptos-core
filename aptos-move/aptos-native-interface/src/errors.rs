@@ -30,7 +30,7 @@ pub enum SafeNativeError {
     InvariantViolation(PartialVMError),
 
     /// Indicating the native function will result in a switch in control flow.
-    CallFunction {
+    FunctionDispatch {
         cost: InternalGas,
         module_name: ModuleId,
         func_name: Identifier,

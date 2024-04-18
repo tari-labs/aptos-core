@@ -1,5 +1,5 @@
 #[test_only]
-module aptos_framework::permissioned_token {
+module 0xcafe::permissioned_token {
     use aptos_framework::fungible_asset::{Self, FungibleAsset, TransferRef};
     use aptos_framework::dispatchable_fungible_asset;
     use aptos_framework::object::{Self, ConstructorRef, Object};
@@ -21,19 +21,19 @@ module aptos_framework::permissioned_token {
         move_to<AllowlistStore>(account, AllowlistStore { allowed_sender });
 
         let withdraw = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"permissioned_token"),
             string::utf8(b"withdraw"),
         );
 
         let deposit = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"permissioned_token"),
             string::utf8(b"deposit"),
         );
 
         let value = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"permissioned_token"),
             string::utf8(b"derived_balance"),
         );

@@ -1,8 +1,8 @@
 #[test_only]
-module aptos_framework::reentrant_token_tests {
+module 0xcafe::reentrant_token_tests {
     use aptos_framework::fungible_asset::{Self, Metadata, TestToken};
     use aptos_framework::dispatchable_fungible_asset;
-    use aptos_framework::reentrant_token;
+    use 0xcafe::reentrant_token;
     use aptos_framework::object;
     use std::option;
 

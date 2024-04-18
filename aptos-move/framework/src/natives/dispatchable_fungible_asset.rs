@@ -18,12 +18,15 @@ use std::collections::VecDeque;
  *
  **************************************************************************************************/
 pub(crate) fn native_dispatch(
-    _context: &mut SafeNativeContext,
+    context: &mut SafeNativeContext,
     ty_args: Vec<Type>,
     mut arguments: VecDeque<Value>,
 ) -> SafeNativeResult<SmallVec<[Value; 1]>> {
     let (module_name, func_name) = extract_function_info(&mut arguments)?;
-    Err(SafeNativeError::CallFunction {
+    if !context.traversal_context().visited.contains_key(&(module_name.address(), module_name.name())) {
+        return Err(SafeNativeError::Abort { abort_code: 4 });
+    }
+    Err(SafeNativeError::FunctionDispatch {
         cost: InternalGas::zero(),
         module_name,
         func_name,

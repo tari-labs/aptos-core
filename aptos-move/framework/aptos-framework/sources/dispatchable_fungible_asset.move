@@ -26,6 +26,8 @@ module aptos_framework::dispatchable_fungible_asset {
     const EAMOUNT_MISMATCH: u64 = 2;
     /// Feature is not activated yet on the network.
     const ENOT_ACTIVATED: u64 = 3;
+    /// Dispatch target is not loaded.
+    const ENOT_LOADED: u64 = 4;
 
     #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
     struct TransferRefStore has key {

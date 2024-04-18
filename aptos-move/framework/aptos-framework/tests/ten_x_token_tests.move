@@ -2,7 +2,7 @@
 module aptos_framework::ten_x_token_tests {
     use aptos_framework::fungible_asset::{Self, Metadata, TestToken};
     use aptos_framework::dispatchable_fungible_asset;
-    use aptos_framework::ten_x_token;
+    use 0xcafe::ten_x_token;
     use aptos_framework::object;
     use std::option;
 

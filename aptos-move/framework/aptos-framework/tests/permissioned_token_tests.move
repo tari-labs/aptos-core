@@ -1,8 +1,8 @@
 #[test_only]
-module aptos_framework::permissioned_token_tests {
+module 0xcafe::permissioned_token_tests {
     use aptos_framework::fungible_asset::{Self, Metadata, TestToken};
     use aptos_framework::dispatchable_fungible_asset;
-    use aptos_framework::permissioned_token;
+    use 0xcafe::permissioned_token;
     use aptos_framework::object;
     use std::option;
 
@@ -49,7 +49,7 @@ module aptos_framework::permissioned_token_tests {
     }
 
     #[test(creator = @0xcafe, aaron = @0xface)]
-    #[expected_failure(abort_code = 1, location = aptos_framework::permissioned_token)]
+    #[expected_failure(abort_code = 1, location = 0xcafe::permissioned_token)]
     fun test_permissioned_disallowed_sender(
         creator: &signer,
         aaron: &signer,

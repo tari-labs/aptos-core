@@ -1,4 +1,4 @@
-/// The `string` module defines the `String` type which represents UTF8 encoded strings.
+/// The `function_info` module defines the `FunctionInfo` type which simulates a function pointer.
 module aptos_framework::function_info {
     use std::error;
     use std::features;
@@ -73,9 +73,8 @@ module aptos_framework::function_info {
     /// 1. We properly charge gas for the function to dispatch.
     /// 2. The function is loaded in the cache so that we can perform further type checking/dispatching logic.
     ///
-    /// Calling `check_dispatch_type_compatibility_impl` or dispatch without loading up the module could result in
-    /// non-determinism on chain because the execution would be dependent on whether the target module is in the
-    /// cache or not, which could vary depending on the workload distribution over threads.
+    /// Calling `check_dispatch_type_compatibility_impl` or dispatch without loading up the module would yield an error
+    /// if such module isn't accessed previously in the transaction.
     public(friend) fun load_function(f: &FunctionInfo) {
         load_function_impl(f)
     }

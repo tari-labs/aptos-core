@@ -1,9 +1,9 @@
 #[test_only]
-module aptos_framework::deflation_token_tests {
+module 0xcafe::deflation_token_tests {
     use aptos_framework::function_info;
     use aptos_framework::fungible_asset::{Self, Metadata, TestToken};
     use aptos_framework::dispatchable_fungible_asset;
-    use aptos_framework::deflation_token;
+    use 0xcafe::deflation_token;
     use aptos_framework::object;
     use std::option;
     use std::string;
@@ -136,19 +136,19 @@ module aptos_framework::deflation_token_tests {
         deflation_token::initialize(creator, &creator_ref);
 
         let withdraw = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"deflation_token"),
             string::utf8(b"withdraw"),
         );
 
         let deposit = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"deflation_token"),
             string::utf8(b"deposit"),
         );
 
         let value = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"deflation_token"),
             string::utf8(b"derived_balance"),
         );
@@ -165,13 +165,13 @@ module aptos_framework::deflation_token_tests {
         let (creator_ref, _) = fungible_asset::create_test_token(creator);
 
         let deposit = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"deflation_token"),
             string::utf8(b"deposit"),
         );
 
         let value = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"deflation_token"),
             string::utf8(b"derived_balance"),
         );
@@ -188,7 +188,7 @@ module aptos_framework::deflation_token_tests {
         let (creator_ref, _) = fungible_asset::create_test_token(creator);
 
         let withdraw = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"deflation_token"),
             string::utf8(b"withdraw"),
         );
@@ -205,13 +205,13 @@ module aptos_framework::deflation_token_tests {
         let (creator_ref, _) = fungible_asset::create_test_token(creator);
 
         let withdraw = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"deflation_token"),
             string::utf8(b"withdraw"),
         );
 
         let deposit = function_info::new_function_info(
-            @aptos_framework,
+            @0xcafe,
             string::utf8(b"deflation_token"),
             string::utf8(b"deposit"),
         );
