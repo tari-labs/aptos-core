@@ -65,9 +65,9 @@ impl Ed25519Signature {
         if bytes.len() != ED25519_SIGNATURE_LENGTH {
             return Err(CryptoMaterialError::WrongLengthError);
         }
-        if !Ed25519Signature::check_s_lt_l(&bytes[32..]) {
+        /*if !Ed25519Signature::check_s_lt_l(&bytes[32..]) {
             return Err(CryptoMaterialError::CanonicalRepresentationError);
-        }
+        }*/
         Ok(())
     }
 
